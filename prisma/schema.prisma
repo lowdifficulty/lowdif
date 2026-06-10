@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  LISTENER
+  ARTIST
+}
+
+enum MiningStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  role          UserRole       @default(LISTENER)
+  walletAddress String?
+  bio           String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  tracks        Track[]
+  listenEvents  ListenEvent[]
+  miningRecords MiningRecord[]
+}
+
+model Track {
+  id           String        @id @default(cuid())
+  title        String
+  genre        String
+  durationSec  Int           @default(0)
+  fileUrl      String
+  coverUrl     String?
+  playCount    Int           @default(0)
+  artistId     String
+  artist       User          @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+  listenEvents ListenEvent[]
+
+  @@index([title])
+  @@index([genre])
+  @@index([artistId])
+}
+
+model ListenEvent {
+  id           String        @id @default(cuid())
+  userId       String
+  trackId      String
+  durationMs   Int
+  completed    Boolean       @default(false)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track        Track         @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  miningRecord MiningRecord?
+  createdAt    DateTime      @default(now())
+
+  @@index([userId])
+  @@index([trackId])
+}
+
+model MiningRecord {
+  id            String       @id @default(cuid())
+  userId        String
+  listenEventId String       @unique
+  txHash        String
+  tokens        Float
+  status        MiningStatus @default(CONFIRMED)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listenEvent   ListenEvent  @relation(fields: [listenEventId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+
+  @@index([userId])
+}

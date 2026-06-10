@@ -1,0 +1,312 @@
+@import "tailwindcss";
+
+:root {
+  --ld-bg: #000000;
+  --ld-bg-secondary: #0a0a0a;
+  --ld-card: #111111;
+  --ld-card-hover: #161616;
+  --ld-text: #ffffff;
+  --ld-text-secondary: rgba(255, 255, 255, 0.6);
+  --ld-text-muted: rgba(255, 255, 255, 0.35);
+  --ld-border: rgba(255, 255, 255, 0.1);
+  --ld-border-strong: rgba(255, 255, 255, 0.25);
+  --ld-accent: #3b82f6;
+  --ld-font: "Courier New", Courier, monospace;
+  --ld-radius: 8px;
+}
+
+@theme inline {
+  --font-sans: var(--ld-font);
+  --font-mono: var(--ld-font);
+  --color-ld-bg: var(--ld-bg);
+  --color-ld-bg-secondary: var(--ld-bg-secondary);
+  --color-ld-card: var(--ld-card);
+  --color-ld-card-hover: var(--ld-card-hover);
+  --color-ld-text: var(--ld-text);
+  --color-ld-text-secondary: var(--ld-text-secondary);
+  --color-ld-text-muted: var(--ld-text-muted);
+  --color-ld-border: var(--ld-border);
+  --color-ld-accent: var(--ld-accent);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--ld-bg);
+  color: var(--ld-text);
+  font-family: var(--ld-font);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body.ld-auth {
+  background: #ffffff;
+  color: #000000;
+}
+
+/* Eyebrow / section tag */
+.ld-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ld-text-muted);
+}
+
+/* Buttons */
+.ld-btn-primary {
+  display: inline-block;
+  background: #ffffff;
+  color: #000000;
+  border: 2px solid #ffffff;
+  padding: 0.75rem 2rem;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 700;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.ld-btn-primary:hover {
+  background: transparent;
+  color: #ffffff;
+}
+
+.ld-btn-outline {
+  display: inline-block;
+  background: transparent;
+  color: #ffffff;
+  border: 2px solid var(--ld-border-strong);
+  padding: 0.75rem 2rem;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 700;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.ld-btn-outline:hover {
+  border-color: #ffffff;
+}
+
+.ld-btn-dark {
+  display: inline-block;
+  width: 100%;
+  background: #000000;
+  color: #ffffff;
+  border: 2px solid #000000;
+  padding: 1rem;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 700;
+  transition: all 0.2s;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.ld-btn-dark:hover:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+}
+
+.ld-btn-dark:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Cards */
+.ld-card {
+  background: var(--ld-card);
+  border: 1px solid var(--ld-border);
+  border-radius: var(--ld-radius);
+}
+
+.ld-card:hover {
+  background: var(--ld-card-hover);
+}
+
+/* Form inputs (dark) */
+.ld-input {
+  width: 100%;
+  border: 1px solid var(--ld-border);
+  background: var(--ld-card);
+  padding: 0.875rem 1rem;
+  color: var(--ld-text);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+  border-radius: var(--ld-radius);
+  box-sizing: border-box;
+}
+
+.ld-input:focus {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.ld-input::placeholder {
+  color: var(--ld-text-muted);
+}
+
+/* Form inputs (auth / light) */
+.ld-input-light {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  padding: 0.875rem 1rem;
+  color: #000000;
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.ld-input-light:focus {
+  border-color: #000000;
+}
+
+.ld-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ld-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.ld-label-light {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.45);
+  margin-bottom: 0.5rem;
+}
+
+/* Mining / proof-of-stream animations */
+@keyframes mining-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes mining-particle-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(
+        calc(cos(var(--angle, 0)) * -3px),
+        calc(sin(var(--angle, 0)) * -3px)
+      )
+      scale(1.2);
+  }
+}
+
+@keyframes mining-particle-compress {
+  to {
+    left: 50% !important;
+    top: 50% !important;
+    opacity: 0;
+    transform: scale(0);
+  }
+}
+
+@keyframes mining-ring-flash {
+  0% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  40% {
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.9));
+  }
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+
+@keyframes mining-stamp-in {
+  0% {
+    opacity: 0;
+    transform: scale(1.6) rotate(-12deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-6deg);
+  }
+}
+
+@keyframes mining-scanner-sweep {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes mining-ad-flicker {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.mining-pulse {
+  animation: mining-pulse 2s ease-in-out infinite;
+}
+
+.mining-particle {
+  animation: mining-particle-drift 2.4s ease-in-out infinite;
+  margin-left: -1px;
+  margin-top: -1px;
+}
+
+.mining-particle-compress {
+  animation: mining-particle-compress 1.2s ease-in forwards;
+}
+
+.mining-ring-lock {
+  animation: mining-ring-flash 0.8s ease-out;
+}
+
+.mining-stamp {
+  animation: mining-stamp-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.mining-stamp > div {
+  transform: rotate(-6deg);
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.mining-scanner {
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 8px,
+    rgba(255, 255, 255, 0.04) 8px,
+    rgba(255, 255, 255, 0.04) 9px
+  );
+  background-size: 200% 100%;
+  animation: mining-scanner-sweep 4s linear infinite;
+  mask-image: radial-gradient(circle, black 30%, transparent 72%);
+}
+
+.mining-ad-cell {
+  animation: mining-ad-flicker 1.6s ease-in-out infinite;
+}
