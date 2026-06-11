@@ -5,11 +5,17 @@ import {
   hashPassword,
   setSessionCookie,
 } from "@/lib/auth";
+import { toSessionUser } from "@/lib/session-user";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, name, role = "LISTENER" } = body;
+    const { email, password, name, referredById } = body as {
+      email?: string;
+      password?: string;
+      name?: string;
+      referredById?: string;
+    };
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -33,22 +39,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name,
-        passwordHash: await hashPassword(password),
-        role: role === "ARTIST" ? "ARTIST" : "LISTENER",
-      },
-    });
+    let validReferrerId: string | undefined;
+    if (typeof referredById === "string" && referredById.trim()) {
+      const referrer = await prisma.user.findUnique({
+        where: { id: referredById.trim() },
+        select: { id: true },
+      });
+      if (referrer) validReferrerId = referrer.id;
+    }
 
-    const token = await createSession({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      walletAddress: user.walletAddress,
-    });
+    const passwordHash = await hashPassword(password);
+    const userData = {
+      email,
+      name,
+      passwordHash,
+      role: "LISTENER" as const,
+      ...(validReferrerId ? { referredById: validReferrerId } : {}),
+    };
+
+    const user = await prisma.user.create({ data: userData });
+
+    const sessionUser = toSessionUser(user);
+    const token = await createSession(sessionUser);
 
     await setSessionCookie(token);
 

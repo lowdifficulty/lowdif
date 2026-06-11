@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { MyUploadsSection } from "@/components/MyUploadsSection";
+import { formatLowdifMinted, lowdifMintedFromPlays } from "@/lib/display";
 import type { ArtistStats, StatsSummary } from "@/lib/types";
 
 interface StatsResponse {
@@ -50,7 +52,7 @@ export default function StatsPage() {
           Stats dashboard
         </h1>
         <p className="mt-2 text-ld-text-secondary">
-          Your listening activity and LOWDIF mining history.
+          Listen, upload, and mine — all from one account.
         </p>
       </div>
 
@@ -64,15 +66,23 @@ export default function StatsPage() {
         <StatCard label="Unique tracks" value={listener.totalTracksPlayed} />
       </div>
 
+      <MyUploadsSection />
+
       {artist && (
         <section className="space-y-4">
           <h2 className="text-xl font-bold tracking-tight text-ld-text">
-            Artist analytics
+            Upload analytics
           </h2>
           <div className="grid gap-px bg-ld-border sm:grid-cols-3">
-            <StatCard label="Total plays" value={artist.totalPlays} />
+            <StatCard
+              label="Total LOWDIF Minted"
+              value={lowdifMintedFromPlays(artist.totalPlays)}
+            />
             <StatCard label="Tracks uploaded" value={artist.totalTracks} />
-            <StatCard label="Plays (7 days)" value={artist.recentPlays} />
+            <StatCard
+              label="LOWDIF Minted (7 days)"
+              value={lowdifMintedFromPlays(artist.recentPlays)}
+            />
           </div>
 
           {artist.topTracks.length > 0 && (
@@ -86,7 +96,7 @@ export default function StatsPage() {
                   >
                     <span>{track.title}</span>
                     <span className="text-ld-text-muted">
-                      {track.playCount} plays
+                      {formatLowdifMinted(track.playCount)}
                     </span>
                   </li>
                 ))}
@@ -95,10 +105,10 @@ export default function StatsPage() {
           )}
 
           <Link
-            href="/artist/dashboard"
+            href="/upload"
             className="inline-block text-xs font-medium uppercase tracking-widest text-ld-text-secondary transition hover:text-ld-text"
           >
-            Go to Artist Hub →
+            Upload more →
           </Link>
         </section>
       )}

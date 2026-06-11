@@ -1,3 +1,4 @@
+/** @deprecated Stored for legacy rows; all accounts have the same capabilities. */
 export type UserRole = "LISTENER" | "ARTIST";
 
 export interface SessionUser {
@@ -6,6 +7,26 @@ export interface SessionUser {
   name: string;
   role: UserRole;
   walletAddress?: string | null;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  giveShareToArtists?: boolean;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  score: number;
+  scoreLabel: string;
+}
+
+export interface PlaylistSummary {
+  slug: string;
+  title: string;
+  description: string;
+  coverUrl: string;
+  trackCount: number;
 }
 
 export interface TrackWithArtist {

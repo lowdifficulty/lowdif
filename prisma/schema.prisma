@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -26,11 +26,17 @@ model User {
   role          UserRole       @default(LISTENER)
   walletAddress String?
   bio           String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  tracks        Track[]
-  listenEvents  ListenEvent[]
-  miningRecords MiningRecord[]
+  avatarUrl          String?
+  giveShareToArtists Boolean        @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  tracks             Track[]
+  listenEvents       ListenEvent[]
+  miningRecords      MiningRecord[]
+  shares             ShareEvent[]   @relation("UserShares")
+  referredById       String?
+  referredBy           User?          @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals            User[]         @relation("UserReferrals")
 }
 
 model Track {
@@ -45,6 +51,8 @@ model Track {
   artist       User          @relation(fields: [artistId], references: [id], onDelete: Cascade)
   createdAt    DateTime      @default(now())
   listenEvents ListenEvent[]
+  ownership    TrackOwnership[]
+  shares       ShareEvent[]
 
   @@index([title])
   @@index([genre])
@@ -78,4 +86,31 @@ model MiningRecord {
   createdAt     DateTime     @default(now())
 
   @@index([userId])
+}
+
+model TrackOwnership {
+  id            String @id @default(cuid())
+  trackId       String
+  walletAddress String
+  sharePercent  Float
+  label         String?
+  track         Track  @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([trackId])
+}
+
+model ShareEvent {
+  id           String   @id @default(cuid())
+  sharerId     String?
+  sharer       User?    @relation("UserShares", fields: [sharerId], references: [id], onDelete: SetNull)
+  trackId      String?
+  track        Track?   @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  playlistSlug String?
+  channel      String
+  createdAt    DateTime @default(now())
+
+  @@index([trackId])
+  @@index([playlistSlug])
+  @@index([sharerId])
+  @@index([createdAt])
 }

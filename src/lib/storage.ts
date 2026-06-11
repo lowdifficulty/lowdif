@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { put } from "@vercel/blob";
+import { requireBlobInProduction } from "./env";
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -11,8 +12,9 @@ function sanitizeFilename(name: string): string {
  */
 export async function uploadPublicFile(
   file: File,
-  folder: "audio" | "covers"
+  folder: "audio" | "covers" | "avatars"
 ): Promise<string> {
+  requireBlobInProduction();
   const safeName = sanitizeFilename(file.name);
   const key = `${folder}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
 

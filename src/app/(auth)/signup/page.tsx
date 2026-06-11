@@ -7,10 +7,11 @@ export default function SignupPage() {
       <h1 className="mb-8 text-center text-3xl font-black tracking-tight text-black">
         Create Account
       </h1>
-      <AuthForm mode="signup" defaultRole="LISTENER" variant="light" />
+      <AuthForm mode="signup" variant="light" />
       <p className="mt-6 text-center text-sm text-black/45">
-        <Link href="/artist/signup" className="text-black underline">
-          Sign up as an artist
+        Listen, upload, and mine LOWDIF with one account.{" "}
+        <Link href="/whitepaper" className="text-black underline">
+          Read the whitepaper
         </Link>
       </p>
     </div>

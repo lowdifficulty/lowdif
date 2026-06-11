@@ -1,5 +1,8 @@
 "use client";
 
+import { useSmoothProgress } from "@/hooks/useSmoothProgress";
+import { trackShareTarget } from "@/lib/share";
+import { ShareButton } from "./ShareButton";
 import { usePlayer } from "./PlayerProvider";
 
 function formatTime(seconds: number): string {
@@ -21,16 +24,21 @@ export function PlayerBar() {
     expand,
   } = usePlayer();
 
+  const barProgress = useSmoothProgress(
+    progress,
+    isPlaying && miningPhase === "active"
+  );
+
   if (!currentTrack || isExpanded) return null;
 
   const duration = currentTrack.durationSec || 0;
   const mintLabel =
     miningPhase === "minted"
       ? `+${mineResult?.tokens ?? 1} LOWDIF`
-      : miningPhase === "minting" || miningPhase === "completing"
+      : miningPhase === "minting"
         ? "Minting…"
         : miningPhase === "active"
-          ? `${Math.round(progress * 100)}%`
+          ? `${Math.floor(barProgress * 100)}%`
           : null;
 
   return (
@@ -63,8 +71,8 @@ export function PlayerBar() {
           </p>
           <div className="mt-1 h-1 overflow-hidden bg-ld-border">
             <div
-              className="h-full bg-white transition-all"
-              style={{ width: `${progress * 100}%` }}
+              className="h-full w-full origin-left bg-white will-change-transform"
+              style={{ transform: `scaleX(${barProgress})` }}
             />
           </div>
         </div>
@@ -73,6 +81,11 @@ export function PlayerBar() {
             {mintLabel}
           </span>
         )}
+        <ShareButton
+          target={trackShareTarget(currentTrack)}
+          compact
+          className="hidden h-9 w-9 shrink-0 items-center justify-center border border-ld-border-strong text-xs text-ld-text-secondary transition hover:border-white hover:text-white sm:flex"
+        />
         <button
           onClick={(e) => {
             e.stopPropagation();

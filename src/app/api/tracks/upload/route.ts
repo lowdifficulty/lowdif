@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { createSession, getSession, setSessionCookie } from "@/lib/auth";
 import { uploadPublicFile } from "@/lib/storage";
+import {
+  validateOwnershipSplits,
+  type OwnershipSplitInput,
+} from "@/lib/ownership";
+import { fetchProfileUser } from "@/lib/profile-user";
+import { insertTrackOwnership } from "@/lib/track-ownership-db";
 
 export async function POST(request: Request) {
   const session = await getSession();
-  if (!session || session.role !== "ARTIST") {
-    return NextResponse.json(
-      { error: "Artist account required to upload tracks." },
-      { status: 403 }
-    );
+  if (!session) {
+    return NextResponse.json({ error: "Sign in to upload tracks." }, { status: 401 });
   }
 
   try {
@@ -19,12 +22,28 @@ export async function POST(request: Request) {
     const durationSec = Number(formData.get("durationSec") ?? 0);
     const audioFile = formData.get("audio") as File | null;
     const coverFile = formData.get("cover") as File | null;
+    const splitsRaw = String(formData.get("ownershipSplits") ?? "[]");
 
     if (!title || !audioFile) {
       return NextResponse.json(
         { error: "Title and audio file are required." },
         { status: 400 }
       );
+    }
+
+    let parsedSplits: OwnershipSplitInput[];
+    try {
+      parsedSplits = JSON.parse(splitsRaw) as OwnershipSplitInput[];
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid ownership split data." },
+        { status: 400 }
+      );
+    }
+
+    const splitResult = validateOwnershipSplits(parsedSplits);
+    if (!splitResult.ok) {
+      return NextResponse.json({ error: splitResult.error }, { status: 400 });
     }
 
     const fileUrl = await uploadPublicFile(audioFile, "audio");
@@ -48,13 +67,24 @@ export async function POST(request: Request) {
       },
     });
 
+    await insertTrackOwnership(track.id, splitResult.splits);
+
+    const sessionUser = await fetchProfileUser(session.id, session);
+
+    if (sessionUser) {
+      const token = await createSession(sessionUser);
+      await setSessionCookie(token);
+    }
+
     return NextResponse.json({
       track: {
         ...track,
         createdAt: track.createdAt.toISOString(),
       },
+      user: sessionUser ?? session,
     });
-  } catch {
+  } catch (err) {
+    console.error("Track upload failed:", err);
     return NextResponse.json(
       { error: "Upload failed. Please try again." },
       { status: 500 }

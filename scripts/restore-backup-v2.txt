@@ -1,0 +1,17 @@
+BACKUP V2 — restore before alien glitch-takeover
+================================================
+
+To revert the glitch-takeover effect:
+
+1. Remove from src/app/layout.tsx:
+   - import { GlitchTakeover } from "@/components/GlitchTakeover";
+   - <GlitchTakeover /> inside <body>
+
+2. Delete these files:
+   - src/components/GlitchTakeover.tsx
+   - src/lib/glitch-takeover.ts
+
+3. Remove the "Alien glitch-takeover" CSS block at the end of src/app/globals.css
+
+Git: branch/tag "backup-v2" points to pre-feature commit on this repo when available.
+     Run: git log backup-v2 -1

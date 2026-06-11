@@ -79,9 +79,10 @@ In Vercel → Project → **Settings** → **Environment Variables**, add:
 | `JWT_SECRET` | Random 64-char hex (see below) | Production, Preview |
 | `NEXT_PUBLIC_APP_URL` | `https://app.lowdif.com` | Production |
 | `NEXT_PUBLIC_APP_URL` | `https://YOUR-PROJECT.vercel.app` | Preview |
-| `NEXT_PUBLIC_MARKETING_URL` | `https://lowdif.com` | All |
+| `BLOB_READ_WRITE_TOKEN` | Auto-set when Blob storage is connected | Production, Preview |
 | `LOWDIF_TOKEN_SYMBOL` | `LOWDIF` | All |
 | `LOWDIF_TOKENS_PER_LISTEN` | `1` | All |
+| `SEED_DEMO_DATA` | `true` only during QA (see Step 7) | Production (temporary) |
 
 Generate `JWT_SECRET`:
 
@@ -117,17 +118,20 @@ Check the deploy log for errors. A successful build ends with “Deployment read
 
 ---
 
-## Step 7 — Seed production data (optional)
+## Step 7 — QA filler data (optional)
 
-Run once from your machine with the **production** `DATABASE_URL`:
+During quality assurance you can load the demo catalog and test accounts. **Skip this when launching for real users** — wipe the database and redeploy without seeding.
 
 ```bash
-# Temporarily point to Neon production DB
+# Point at your Neon production DB, then:
 set DATABASE_URL=postgresql://...your-neon-url...
+set SEED_DEMO_DATA=true
 npm run db:seed
 ```
 
-This creates demo accounts and sample tracks. **Change or remove demo passwords before going live.**
+Demo logins after seed: `listener@lowdif.com` / `password123` (and other seeded accounts — same password).
+
+Production deploys **do not** seed automatically. `db:seed` is blocked in production unless `SEED_DEMO_DATA=true` is set explicitly.
 
 ---
 

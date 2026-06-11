@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const [totalListens, tokenSum, miningRecords, distinctTracks] =
+  const [totalListens, tokenSum, miningRecords, distinctTracks, artistTracks] =
     await Promise.all([
       prisma.listenEvent.count({
         where: { userId: session.id, completed: true },
@@ -32,16 +32,29 @@ export async function GET() {
         distinct: ["trackId"],
         select: { trackId: true },
       }),
+      prisma.track.findMany({
+        where: { artistId: session.id },
+        orderBy: { playCount: "desc" },
+      }),
     ]);
 
   const totalTokensEarned = tokenSum._sum.tokens ?? 0;
 
-  if (session.role === "ARTIST") {
-    const artistTracks = await prisma.track.findMany({
-      where: { artistId: session.id },
-      orderBy: { playCount: "desc" },
-    });
+  const listener = {
+    totalListens,
+    totalTokensEarned,
+    totalTracksPlayed: distinctTracks.length,
+    recentMining: miningRecords.map((record) => ({
+      id: record.id,
+      txHash: record.txHash,
+      tokens: record.tokens,
+      trackTitle: record.listenEvent.track.title,
+      createdAt: record.createdAt.toISOString(),
+    })),
+  };
 
+  let artist = null;
+  if (artistTracks.length > 0) {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const recentPlays = await prisma.listenEvent.count({
       where: {
@@ -51,45 +64,17 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({
-      listener: {
-        totalListens,
-        totalTokensEarned,
-        totalTracksPlayed: distinctTracks.length,
-        recentMining: miningRecords.map((record) => ({
-          id: record.id,
-          txHash: record.txHash,
-          tokens: record.tokens,
-          trackTitle: record.listenEvent.track.title,
-          createdAt: record.createdAt.toISOString(),
-        })),
-      },
-      artist: {
-        totalPlays: artistTracks.reduce((sum, t) => sum + t.playCount, 0),
-        totalTracks: artistTracks.length,
-        topTracks: artistTracks.slice(0, 5).map((t) => ({
-          id: t.id,
-          title: t.title,
-          playCount: t.playCount,
-        })),
-        recentPlays,
-      },
-    });
+    artist = {
+      totalPlays: artistTracks.reduce((sum, t) => sum + t.playCount, 0),
+      totalTracks: artistTracks.length,
+      topTracks: artistTracks.slice(0, 5).map((t) => ({
+        id: t.id,
+        title: t.title,
+        playCount: t.playCount,
+      })),
+      recentPlays,
+    };
   }
 
-  return NextResponse.json({
-    listener: {
-      totalListens,
-      totalTokensEarned,
-      totalTracksPlayed: distinctTracks.length,
-      recentMining: miningRecords.map((record) => ({
-        id: record.id,
-        txHash: record.txHash,
-        tokens: record.tokens,
-        trackTitle: record.listenEvent.track.title,
-        createdAt: record.createdAt.toISOString(),
-      })),
-    },
-    artist: null,
-  });
+  return NextResponse.json({ listener, artist });
 }

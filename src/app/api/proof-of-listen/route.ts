@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { submitProofOfListen } from "@/lib/blockchain/mock-mining";
+import { readGiveShareToArtists } from "@/lib/profile-user";
+import { fetchTrackOwnership } from "@/lib/track-ownership-db";
 
 const MIN_LISTEN_RATIO = 0.8;
 
@@ -28,10 +30,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const track = await prisma.track.findUnique({ where: { id: trackId } });
+    const track = await prisma.track.findUnique({
+      where: { id: trackId },
+      include: {
+        artist: { select: { walletAddress: true } },
+      },
+    });
     if (!track) {
       return NextResponse.json({ error: "Track not found." }, { status: 404 });
     }
+
+    const ownership = await fetchTrackOwnership(trackId);
+    const giveToArtists = await readGiveShareToArtists(session.id);
 
     const requiredMs =
       track.durationSec > 0
@@ -39,6 +49,29 @@ export async function POST(request: Request) {
         : durationMs;
 
     const completed = durationMs >= requiredMs;
+
+    if (completed) {
+      const recentMine = await prisma.miningRecord.findFirst({
+        where: {
+          userId: session.id,
+          status: "CONFIRMED",
+          listenEvent: { trackId },
+          createdAt: { gte: new Date(Date.now() - 15_000) },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (recentMine) {
+        return NextResponse.json({
+          mined: true,
+          tokens: recentMine.tokens,
+          tokenSymbol: process.env.LOWDIF_TOKEN_SYMBOL ?? "LOWDIF",
+          txHash: recentMine.txHash,
+          miningRecordId: recentMine.id,
+          listenEventId: recentMine.listenEventId,
+        });
+      }
+    }
 
     const listenEvent = await prisma.listenEvent.create({
       data: {
@@ -57,27 +90,22 @@ export async function POST(request: Request) {
       });
     }
 
-    const existingMining = await prisma.miningRecord.findFirst({
-      where: {
-        userId: session.id,
-        listenEvent: { trackId },
-        createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
-      },
-    });
-
-    if (existingMining) {
-      return NextResponse.json({
-        mined: false,
-        message: "You already mined this track recently.",
-        listenEventId: listenEvent.id,
-      });
-    }
+    const artistDistributions =
+      ownership.length > 0
+        ? ownership.map((row) => ({
+            walletAddress: row.walletAddress,
+            sharePercent: row.sharePercent,
+          }))
+        : track.artist.walletAddress
+          ? [{ walletAddress: track.artist.walletAddress, sharePercent: 100 }]
+          : [];
 
     const miningResult = await submitProofOfListen({
       userId: session.id,
       trackId,
       listenDurationMs: durationMs,
-      walletAddress: session.walletAddress,
+      walletAddress: giveToArtists ? null : session.walletAddress,
+      distributions: giveToArtists ? artistDistributions : undefined,
     });
 
     const miningRecord = await prisma.miningRecord.create({

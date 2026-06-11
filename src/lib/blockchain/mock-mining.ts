@@ -1,10 +1,17 @@
 import type { ProofOfListenResult } from "./types";
 
+export interface TokenDistribution {
+  walletAddress: string;
+  sharePercent: number;
+}
+
 export interface ProofOfListenPayload {
   userId: string;
   trackId: string;
   listenDurationMs: number;
   walletAddress?: string | null;
+  /** When set, tokens are split across these wallets instead of walletAddress. */
+  distributions?: TokenDistribution[];
 }
 
 /**
@@ -32,6 +39,7 @@ export async function submitProofOfListen(
           trackId: payload.trackId,
           durationMs: payload.listenDurationMs,
           wallet: payload.walletAddress,
+          distributions: payload.distributions,
           token: tokenSymbol,
         }),
       });

@@ -3,23 +3,26 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import {
+  clearStoredReferral,
+  getStoredReferral,
+} from "@/lib/share-referral";
 
 interface AuthFormProps {
   mode: "login" | "signup";
-  defaultRole?: "LISTENER" | "ARTIST";
   variant?: "dark" | "light";
+  redirectTo?: string;
 }
 
 export function AuthForm({
   mode,
-  defaultRole = "LISTENER",
   variant = "dark",
+  redirectTo = "/trending",
 }: AuthFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"LISTENER" | "ARTIST">(defaultRole);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -34,10 +37,16 @@ export function AuthForm({
 
     try {
       const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
+      const { refId } = getStoredReferral();
       const body =
         mode === "login"
           ? { email, password }
-          : { email, password, name, role };
+          : {
+              email,
+              password,
+              name,
+              referredById: refId ?? undefined,
+            };
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -51,11 +60,11 @@ export function AuthForm({
         return;
       }
 
-      if (data.user?.role === "ARTIST") {
-        router.push("/artist/dashboard");
-      } else {
-        router.push("/");
+      if (mode === "signup") {
+        clearStoredReferral();
       }
+
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError("Network error. Please try again.");
@@ -67,43 +76,16 @@ export function AuthForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {mode === "signup" && (
-        <>
-          <div>
-            <label className={labelClass}>Username</label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          {defaultRole === "LISTENER" && (
-            <div>
-              <label className={labelClass}>I am a</label>
-              <div className="flex gap-2">
-                {(["LISTENER", "ARTIST"] as const).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setRole(r)}
-                    className={`flex-1 border py-2 text-xs font-medium uppercase tracking-widest transition ${
-                      role === r
-                        ? isLight
-                          ? "border-black bg-black text-white"
-                          : "border-white bg-white text-black"
-                        : isLight
-                          ? "border-black/20 text-black/45 hover:border-black/40"
-                          : "border-ld-border text-ld-text-muted hover:border-ld-border-strong"
-                    }`}
-                  >
-                    {r === "LISTENER" ? "Listener" : "Artist"}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+        <div>
+          <label className={labelClass}>Username</label>
+          <input
+            type="text"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={inputClass}
+          />
+        </div>
       )}
 
       <div>

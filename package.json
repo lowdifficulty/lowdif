@@ -13,6 +13,7 @@
     "db:deploy": "prisma migrate deploy",
     "preview": "npm run db:push && npm run db:seed && npm run dev",
     "db:seed": "tsx prisma/seed.ts",
+    "covers:generate": "node scripts/generate-cover-svgs.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {

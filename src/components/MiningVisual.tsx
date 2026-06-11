@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useSmoothProgress } from "@/hooks/useSmoothProgress";
 import type { MiningPhase } from "./PlayerProvider";
 
 interface MiningVisualProps {
@@ -9,16 +10,16 @@ interface MiningVisualProps {
   trackTitle: string;
   artistName: string;
   durationSec: number;
-  showAd: boolean;
+  txHash?: string | null;
   children: React.ReactNode;
 }
 
-const RING_SIZE = 320;
-const RING_STROKE = 2;
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
-
+const BORDER_STROKE = 6;
+const ART_SIZE = 232;
+const FRAME_SIZE = ART_SIZE + BORDER_STROKE * 2;
 const PARTICLE_COUNT = 28;
+const PROOF_BLOCK_HEIGHT = 132;
+const BORDER_PERIMETER = 2 * (ART_SIZE + BORDER_STROKE) * 2;
 
 export function MiningVisual({
   progress,
@@ -26,15 +27,20 @@ export function MiningVisual({
   trackTitle,
   artistName,
   durationSec,
-  showAd,
+  txHash,
   children,
 }: MiningVisualProps) {
-  const percent = Math.min(100, Math.round(progress * 100));
-  const ringOffset = RING_CIRCUMFERENCE * (1 - progress);
   const isComplete = phase === "minted" || phase === "failed";
+  const smoothProgress = useSmoothProgress(
+    progress,
+    phase === "active" && !isComplete
+  );
+  const visualProgress = phase === "active" ? smoothProgress : progress;
+  const percent = Math.min(100, Math.floor(visualProgress * 100));
+  const borderOffset = BORDER_PERIMETER * (1 - visualProgress);
   const isMinting = phase === "completing" || phase === "minting";
-  const showStamp = phase === "minted";
   const showBlock = isMinting || phase === "minted";
+  const borderAnimates = phase !== "active";
 
   const particles = useMemo(
     () =>
@@ -52,124 +58,130 @@ export function MiningVisual({
     if (phase === "failed") return "Proof incomplete";
     if (phase === "minting") return "Stream verified";
     if (phase === "completing") return "Stream verified";
-    if (progress >= 0.99) return "Finalizing proof…";
+    if (visualProgress >= 0.99) return "Finalizing proof…";
     return `Mining LOWDIF… ${percent}%`;
   })();
 
   const subLine = (() => {
     if (phase === "minted")
       return "1 LOWDIF minted · 50% to artist · 50% to listener";
-    if (phase === "failed")
-      return "Complete the full track to mint LOWDIF";
+    if (phase === "failed") return "Complete the full track to mint LOWDIF";
     if (isMinting) return "Minting LOWDIF on-chain…";
-    if (progress >= 0.8) return "Complete the track to mint LOWDIF";
+    if (visualProgress >= 0.8) return "Complete the track to mint LOWDIF";
     return "Proof of Stream active";
   })();
 
   return (
-    <div className="flex w-full max-w-lg flex-col items-center gap-8">
-      <div
-        className="relative flex items-center justify-center"
-        style={{ width: RING_SIZE, height: RING_SIZE }}
-      >
-        {/* Waveform scanner lines */}
-        <div
-          className={`mining-scanner pointer-events-none absolute inset-0 ${
-            isComplete ? "opacity-20" : "opacity-100"
-          }`}
-          aria-hidden
-        />
-
-        {/* Particles converging on center */}
-        <div className="pointer-events-none absolute inset-0" aria-hidden>
-          {particles.map((p) => {
-            const dist = 42 - progress * 34;
-            const x = 50 + Math.cos(p.angle) * dist;
-            const y = 50 + Math.sin(p.angle) * dist;
-            return (
-              <span
-                key={p.id}
-                className={`mining-particle absolute rounded-full bg-white ${
-                  isMinting || isComplete ? "mining-particle-compress" : ""
-                }`}
-                style={{
-                  width: p.size,
-                  height: p.size,
-                  left: `${x}%`,
-                  top: `${y}%`,
-                  animationDelay: `${p.delay}s`,
-                  opacity: isComplete ? 0.15 : 0.35 + progress * 0.45,
-                }}
-              />
-            );
-          })}
-        </div>
-
-        {/* Progress ring */}
-        <svg
-          className="pointer-events-none absolute inset-0 -rotate-90"
-          width={RING_SIZE}
-          height={RING_SIZE}
-          aria-hidden
-        >
-          <circle
-            cx={RING_SIZE / 2}
-            cy={RING_SIZE / 2}
-            r={RING_RADIUS}
-            fill="none"
-            stroke="rgba(255,255,255,0.12)"
-            strokeWidth={RING_STROKE}
-            strokeDasharray="4 8"
-          />
-          <circle
-            cx={RING_SIZE / 2}
-            cy={RING_SIZE / 2}
-            r={RING_RADIUS}
-            fill="none"
-            stroke="white"
-            strokeWidth={RING_STROKE}
-            strokeLinecap="round"
-            strokeDasharray={RING_CIRCUMFERENCE}
-            strokeDashoffset={ringOffset}
-            className={`transition-[stroke-dashoffset] duration-300 ${
-              phase === "minted" ? "mining-ring-lock" : ""
+    <div className="flex min-h-0 w-full max-w-[min(90vw,500px)] flex-1 flex-col items-center">
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+        <div className="relative aspect-square max-h-full w-[min(100%,min(90vw,500px))]">
+          <div
+            className={`mining-scanner pointer-events-none absolute inset-0 transition-opacity duration-700 ${
+              isComplete ? "opacity-20" : "opacity-100"
             }`}
+            aria-hidden
           />
-        </svg>
 
-        {/* Artwork / ad slot */}
-        <div
-          className={`relative z-10 overflow-hidden bg-black shadow-2xl ${
-            showAd ? "ring-2 ring-white/30" : ""
-          }`}
-          style={{ width: RING_SIZE - 48, height: RING_SIZE - 48 }}
-        >
-          {children}
-        </div>
+          <div className="pointer-events-none absolute inset-0" aria-hidden>
+            {particles.map((p) => {
+              const dist = 42 - visualProgress * 34;
+              const x = 50 + Math.cos(p.angle) * dist;
+              const y = 50 + Math.sin(p.angle) * dist;
+              return (
+                <span
+                  key={p.id}
+                  className={`mining-particle absolute rounded-full bg-white ${
+                    isMinting || isComplete ? "mining-particle-compress" : ""
+                  }`}
+                  style={{
+                    width: p.size,
+                    height: p.size,
+                    left: `${x}%`,
+                    top: `${y}%`,
+                    animationDelay: `${p.delay}s`,
+                    opacity: isComplete ? 0.15 : 0.35 + visualProgress * 0.45,
+                  }}
+                />
+              );
+            })}
+          </div>
 
-        {/* Verified stamp */}
-        {showStamp && (
-          <div className="mining-stamp pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-            <div className="border-2 border-white px-6 py-2 text-sm font-black tracking-[0.35em] text-white">
-              VERIFIED
+          <div className="absolute inset-0 m-auto aspect-square w-full max-w-full">
+            <svg
+              className="pointer-events-none absolute inset-0 h-full w-full"
+              viewBox={`0 0 ${FRAME_SIZE} ${FRAME_SIZE}`}
+              preserveAspectRatio="xMidYMid meet"
+              aria-hidden
+            >
+              <rect
+                x={BORDER_STROKE / 2}
+                y={BORDER_STROKE / 2}
+                width={ART_SIZE + BORDER_STROKE}
+                height={ART_SIZE + BORDER_STROKE}
+                fill="none"
+                stroke="#6b7280"
+                strokeWidth={BORDER_STROKE}
+              />
+              <rect
+                x={BORDER_STROKE / 2}
+                y={BORDER_STROKE / 2}
+                width={ART_SIZE + BORDER_STROKE}
+                height={ART_SIZE + BORDER_STROKE}
+                fill="none"
+                stroke="white"
+                strokeWidth={BORDER_STROKE}
+                strokeLinecap="square"
+                strokeDasharray={BORDER_PERIMETER}
+                strokeDashoffset={borderOffset}
+                style={{
+                  willChange: phase === "active" ? "stroke-dashoffset" : undefined,
+                }}
+                className={
+                  borderAnimates
+                    ? `transition-[stroke-dashoffset] duration-500 ease-out ${
+                        phase === "minted" ? "mining-ring-lock" : ""
+                      }`
+                    : phase === "minted"
+                      ? "mining-ring-lock"
+                      : undefined
+                }
+              />
+            </svg>
+
+            <div
+              className="absolute overflow-hidden bg-black shadow-2xl"
+              style={{
+                left: `${(BORDER_STROKE / FRAME_SIZE) * 100}%`,
+                top: `${(BORDER_STROKE / FRAME_SIZE) * 100}%`,
+                width: `${(ART_SIZE / FRAME_SIZE) * 100}%`,
+                height: `${(ART_SIZE / FRAME_SIZE) * 100}%`,
+              }}
+            >
+              {children}
             </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Status copy */}
-      <div className="text-center">
-        <p className="ld-eyebrow mb-2">{subLine}</p>
-        <p className="text-lg font-black tracking-tight text-white">
+      <div className="mt-3 w-full shrink-0 pb-[10px] text-center sm:mt-4">
+        <p className="ld-eyebrow mb-1 transition-opacity duration-300">{subLine}</p>
+        <p className="text-base font-black tracking-tight text-white transition-opacity duration-300 sm:text-lg">
           {statusLine}
         </p>
       </div>
 
-      {/* Block seal */}
-      {showBlock && (
-        <div className="w-full max-w-sm border border-ld-border bg-black/60 p-4 text-xs">
-          <p className="ld-eyebrow mb-3">Proof block</p>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-ld-text-secondary">
+      <div
+        className="w-full shrink-0 overflow-hidden transition-[height,margin,opacity] duration-500 ease-in-out"
+        style={{
+          height: showBlock ? PROOF_BLOCK_HEIGHT : 0,
+          marginTop: showBlock ? 12 : 0,
+          opacity: showBlock ? 1 : 0,
+        }}
+        aria-hidden={!showBlock}
+      >
+        <div className="h-full border border-ld-border bg-black/80 p-3 text-xs">
+          <p className="ld-eyebrow mb-2">Proof block</p>
+          <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-ld-text-secondary">
             <dt className="text-ld-text-muted">Artist</dt>
             <dd className="truncate text-right text-ld-text">{artistName}</dd>
             <dt className="text-ld-text-muted">Track</dt>
@@ -184,8 +196,15 @@ export function MiningVisual({
               {phase === "minted" ? "Stream verified" : "Pending"}
             </dd>
           </dl>
+          <p
+            className={`mt-2 truncate font-mono text-[9px] text-ld-text-muted transition-opacity duration-300 ${
+              txHash && phase === "minted" ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            {txHash ?? "\u00A0"}
+          </p>
         </div>
-      )}
+      </div>
     </div>
   );
 }

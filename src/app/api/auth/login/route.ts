@@ -5,6 +5,7 @@ import {
   setSessionCookie,
   verifyPassword,
 } from "@/lib/auth";
+import { toSessionUser } from "@/lib/session-user";
 
 export async function POST(request: Request) {
   try {
@@ -26,13 +27,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const token = await createSession({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      walletAddress: user.walletAddress,
-    });
+    const sessionUser = toSessionUser(user);
+    const token = await createSession(sessionUser);
 
     await setSessionCookie(token);
 

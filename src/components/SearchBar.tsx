@@ -25,8 +25,8 @@ export function SearchBar({
   onGenreChange,
 }: SearchBarProps) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <div className="relative flex-1">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_10.5rem] sm:items-center">
+      <div className="relative min-w-0">
         <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ld-text-muted">
           ⌕
         </span>
@@ -35,13 +35,13 @@ export function SearchBar({
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Search tracks, artists, genres..."
-          className="ld-input py-3 pl-11"
+          className="ld-input w-full py-3 pl-11"
         />
       </div>
       <select
         value={genre}
         onChange={(e) => onGenreChange(e.target.value)}
-        className="ld-input w-full sm:w-auto"
+        className="ld-input w-full pr-10 sm:w-[10.5rem]"
       >
         {GENRES.map((g) => (
           <option key={g} value={g === "All" ? "" : g}>

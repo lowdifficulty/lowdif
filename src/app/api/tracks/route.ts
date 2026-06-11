@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { coverForTitle } from "@/lib/covers";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -31,6 +31,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     tracks: tracks.map((track) => ({
       ...track,
+      coverUrl: track.coverUrl ?? coverForTitle(track.title),
       createdAt: track.createdAt.toISOString(),
     })),
   });

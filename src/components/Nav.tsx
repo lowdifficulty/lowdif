@@ -1,21 +1,32 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { SessionUser } from "@/lib/types";
 
-const marketingUrl =
-  process.env.NEXT_PUBLIC_MARKETING_URL ?? "https://lowdif.com";
+interface NavProps {
+  initialUser?: SessionUser | null;
+}
 
-export function Nav() {
-  const [user, setUser] = useState<SessionUser | null>(null);
+export function Nav({ initialUser = null }: NavProps) {
+  const pathname = usePathname();
+  const [user, setUser] = useState<SessionUser | null>(initialUser);
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((data) => setUser(data.user ?? null))
-      .catch(() => setUser(null));
-  }, []);
+    setUser(initialUser);
+  }, [initialUser]);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(async (r) => {
+        if (!r.ok) return initialUser;
+        const data = await r.json();
+        return (data.user as SessionUser | null) ?? initialUser;
+      })
+      .then((nextUser) => setUser(nextUser ?? null))
+      .catch(() => setUser(initialUser));
+  }, [pathname, initialUser]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -27,38 +38,53 @@ export function Nav() {
     <header className="fixed top-0 right-0 left-0 z-50 border-b border-ld-border bg-ld-bg">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link
-          href="/"
+          href="/trending"
           className="text-xl font-black tracking-tight text-ld-text"
         >
           LOWDIF
         </Link>
 
-        <nav className="flex items-center gap-6 text-xs font-medium uppercase tracking-widest">
+        <nav className="flex items-center gap-4 text-xs font-medium uppercase tracking-widest sm:gap-6">
+          <Link
+            href="/trending"
+            className="hidden text-ld-text-secondary transition hover:text-ld-text sm:inline"
+          >
+            Trending
+          </Link>
+          <Link
+            href="/playlists"
+            className="hidden text-ld-text-secondary transition hover:text-ld-text sm:inline"
+          >
+            Playlists
+          </Link>
+          <Link
+            href="/leaderboard"
+            className="hidden text-ld-text-secondary transition hover:text-ld-text sm:inline"
+          >
+            Leaderboard
+          </Link>
           <Link
             href="/stats"
             className="hidden text-ld-text-secondary transition hover:text-ld-text sm:inline"
           >
             Stats
           </Link>
-          {user?.role === "ARTIST" && (
+          {user && (
             <Link
-              href="/artist/dashboard"
+              href="/upload"
               className="hidden text-ld-text-secondary transition hover:text-ld-text sm:inline"
             >
-              Artist Hub
+              Upload
             </Link>
           )}
-          <a
-            href={marketingUrl}
-            className="hidden text-ld-text-secondary transition hover:text-ld-text md:inline"
-          >
-            About
-          </a>
           {user ? (
             <>
-              <span className="hidden text-ld-text-muted lg:inline">
+              <Link
+                href="/account"
+                className="max-w-[7rem] truncate text-ld-text-muted transition hover:text-ld-text sm:max-w-[9rem]"
+              >
                 {user.name}
-              </span>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="border border-ld-border-strong px-4 py-2 text-ld-text transition hover:border-ld-text hover:bg-white/5"
