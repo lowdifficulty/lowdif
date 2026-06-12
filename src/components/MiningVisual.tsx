@@ -141,9 +141,7 @@ export function MiningVisual({
                     ? `transition-[stroke-dashoffset] duration-500 ease-out ${
                         phase === "minted" ? "mining-ring-lock" : ""
                       }`
-                    : phase === "minted"
-                      ? "mining-ring-lock"
-                      : undefined
+                    : undefined
                 }
               />
             </svg>

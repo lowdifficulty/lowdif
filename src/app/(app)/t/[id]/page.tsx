@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const track = await prisma.track.findUnique({
     where: { id },
-    include: { artist: { select: { name: true } } },
+    include: { artist: { select: { id: true, name: true } } },
   });
 
   if (!track) {
