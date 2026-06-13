@@ -9,7 +9,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { MINT_GAP_MS } from "@/lib/player-timing";
+import {
+  MINT_FAILED_GAP_MS,
+  VERIFIED_OVERLAY_MS,
+} from "@/lib/player-timing";
 import type { TrackWithArtist } from "@/lib/types";
 
 export type MiningPhase =
@@ -64,6 +67,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const currentTrackRef = useRef<TrackWithArtist | null>(null);
   const completionTriggeredRef = useRef(false);
   const completionGenRef = useRef(0);
+  const isPlayingRef = useRef(false);
 
   const [currentTrack, setCurrentTrack] = useState<TrackWithArtist | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -78,6 +82,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     currentTrackRef.current = currentTrack;
   }, [currentTrack]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   const submitProof = useCallback(
     async (track: TrackWithArtist, durationMs: number): Promise<MineResult> => {
@@ -207,7 +215,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const gen = ++completionGenRef.current;
       setMiningPhase("minting");
       const durationMs = Date.now() - listenStartRef.current;
-      const gapStart = Date.now();
 
       const result = await submitProof(track, durationMs);
 
@@ -216,13 +223,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (result.mined) {
         setMiningPhase("minted");
         setVerifiedOverlayVisible(true);
+        await new Promise((r) => setTimeout(r, VERIFIED_OVERLAY_MS));
       } else {
         setMiningPhase("failed");
-      }
-
-      const remaining = MINT_GAP_MS - (Date.now() - gapStart);
-      if (remaining > 0) {
-        await new Promise((r) => setTimeout(r, remaining));
+        await new Promise((r) => setTimeout(r, MINT_FAILED_GAP_MS));
       }
 
       if (completionGenRef.current !== gen) return;
@@ -328,7 +332,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     const onTimeUpdate = () => {
       // Visible playback is driven by rAF; timeupdate is a fallback when the tab is hidden.
-      if (!document.hidden && isPlaying) return;
+      if (!document.hidden && isPlayingRef.current) return;
 
       const duration = effectiveDuration(currentTrack, audio.duration);
       if (!duration) return;
@@ -356,17 +360,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("ended", onEnded);
 
-    if (isPlaying) {
-      audio.play().catch(() => setIsPlaying(false));
-    } else {
-      audio.pause();
-    }
-
     return () => {
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("ended", onEnded);
     };
-  }, [currentTrack, isPlaying, triggerCompletion]);
+  }, [currentTrack, triggerCompletion]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack) return;
+
+    if (isPlaying) {
+      void audio.play().catch(() => setIsPlaying(false));
+    } else {
+      audio.pause();
+    }
+  }, [currentTrack, isPlaying]);
 
   useEffect(() => {
     if (!currentTrack || !isPlaying) return;

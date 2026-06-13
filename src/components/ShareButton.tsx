@@ -8,6 +8,7 @@ interface ShareButtonProps {
   label?: string;
   className?: string;
   compact?: boolean;
+  children?: React.ReactNode;
 }
 
 export function ShareButton({
@@ -15,6 +16,7 @@ export function ShareButton({
   label = "Share",
   className = "",
   compact = false,
+  children,
 }: ShareButtonProps) {
   const { openShare } = useShare();
 
@@ -35,7 +37,7 @@ export function ShareButton({
         }`
       }
     >
-      {compact ? "↗" : label}
+      {children ?? (compact ? "↗" : label)}
     </button>
   );
 }

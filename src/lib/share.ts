@@ -1,4 +1,6 @@
 import type { TrackWithArtist } from "./types";
+import { buildTrackSharePath } from "./share-slug";
+import { appOrigin, marketingOrigin } from "./site-urls";
 
 export type ShareTargetType = "track" | "playlist";
 
@@ -31,23 +33,36 @@ export function getAppOrigin(): string {
   return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 }
 
+/** Public marketing origin used in share links (e.g. lowdif.com). */
+export function getShareOrigin(): string {
+  if (marketingOrigin) return marketingOrigin.origin;
+  if (appOrigin) return appOrigin.origin;
+  if (typeof window !== "undefined") return window.location.origin;
+  return (
+    process.env.NEXT_PUBLIC_MARKETING_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    "http://localhost:3000"
+  );
+}
+
 export function buildShareUrl(
   target: ShareTarget,
   ref?: string | null,
-  origin = getAppOrigin()
+  origin = getShareOrigin()
 ): string {
   const params = new URLSearchParams();
   if (ref) params.set("ref", ref);
   const qs = params.toString();
   const suffix = qs ? `?${qs}` : "";
+  const base = origin.replace(/\/$/, "");
 
   if (target.type === "track" && target.track) {
-    return `${origin}/t/${target.track.id}${suffix}`;
+    return `${base}${buildTrackSharePath(target.track)}${suffix}`;
   }
   if (target.type === "playlist" && target.playlist) {
-    return `${origin}/playlists/${target.playlist.slug}${suffix}`;
+    return `${base}/playlists/${target.playlist.slug}${suffix}`;
   }
-  return origin;
+  return base;
 }
 
 export function buildEmbedUrl(trackId: string, origin = getAppOrigin()): string {

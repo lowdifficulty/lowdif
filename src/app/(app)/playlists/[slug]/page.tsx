@@ -5,40 +5,89 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { ShareButton } from "@/components/ShareButton";
 import { SharedByBanner } from "@/components/SharedByBanner";
+import { SortablePlaylistTracks } from "@/components/SortablePlaylistTracks";
 import { TrackGrid } from "@/components/TrackGrid";
+import { MY_PLAYLIST_SLUG } from "@/lib/playlist-constants";
 import { storeReferral } from "@/lib/share-referral";
 import { playlistShareTarget } from "@/lib/share";
 import { playlistBySlug } from "@/lib/sample-playlists";
 import type { TrackWithArtist } from "@/lib/types";
 
+interface PlaylistMeta {
+  slug: string;
+  title: string;
+  description: string;
+  coverUrl: string;
+  trackCount: number;
+  isOwner?: boolean;
+}
+
 function PlaylistDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
-  const playlist = playlistBySlug(slug);
+  const curated = slug !== MY_PLAYLIST_SLUG ? playlistBySlug(slug) : undefined;
+  const isMyPlaylist = slug === MY_PLAYLIST_SLUG;
   const ref = searchParams.get("ref");
 
+  const [playlist, setPlaylist] = useState<PlaylistMeta | null>(
+    curated
+      ? {
+          slug: curated.slug,
+          title: curated.title,
+          description: curated.description,
+          coverUrl: curated.coverUrl,
+          trackCount: curated.trackTitles.length,
+        }
+      : null
+  );
   const [tracks, setTracks] = useState<TrackWithArtist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [sharerName, setSharerName] = useState<string | null>(null);
 
   const fetchTracks = useCallback(async () => {
-    if (!playlist) return;
     setLoading(true);
+    setNotFound(false);
+
     try {
+      if (isMyPlaylist) {
+        const res = await fetch("/api/playlists/mine", { credentials: "include" });
+        if (res.status === 401) {
+          setPlaylist(null);
+          setTracks([]);
+          setNotFound(false);
+          return;
+        }
+        if (!res.ok) {
+          setNotFound(true);
+          return;
+        }
+        const data = await res.json();
+        setPlaylist(data.playlist);
+        setTracks(data.tracks ?? []);
+        return;
+      }
+
+      if (!curated) {
+        setNotFound(true);
+        return;
+      }
+
       const res = await fetch("/api/tracks");
       const data = await res.json();
       const all: TrackWithArtist[] = data.tracks ?? [];
-      const ordered = playlist.trackTitles
+      const ordered = curated.trackTitles
         .map((title) => all.find((t) => t.title === title))
         .filter((t): t is TrackWithArtist => Boolean(t));
       setTracks(ordered);
     } catch {
       setTracks([]);
+      if (!isMyPlaylist) setNotFound(true);
     } finally {
       setLoading(false);
     }
-  }, [playlist]);
+  }, [curated, isMyPlaylist]);
 
   useEffect(() => {
     void fetchTracks();
@@ -56,7 +105,41 @@ function PlaylistDetailPage() {
       .catch(() => storeReferral(ref));
   }, [ref]);
 
-  if (!playlist) {
+  const handleReorder = useCallback(async (trackIds: string[]) => {
+    const res = await fetch("/api/playlists/mine/reorder", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ trackIds }),
+    });
+    if (!res.ok) {
+      await fetchTracks();
+    }
+  }, [fetchTracks]);
+
+  if (isMyPlaylist && !loading && !playlist) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-ld-text-secondary">
+          Sign in to view and edit My Playlist.
+        </p>
+        <Link
+          href="/login"
+          className="ld-btn-primary mt-6 inline-block px-6 py-3 text-[10px]"
+        >
+          Sign in
+        </Link>
+        <Link
+          href="/playlists"
+          className="mt-4 block text-xs font-medium uppercase tracking-widest text-ld-text-secondary hover:text-ld-text"
+        >
+          ← All playlists
+        </Link>
+      </div>
+    );
+  }
+
+  if (notFound || !playlist) {
     return (
       <div className="py-16 text-center">
         <p className="text-ld-text-secondary">Playlist not found.</p>
@@ -75,7 +158,7 @@ function PlaylistDetailPage() {
     title: playlist.title,
     description: playlist.description,
     coverUrl: playlist.coverUrl,
-    trackCount: playlist.trackTitles.length,
+    trackCount: tracks.length || playlist.trackCount,
   });
 
   return (
@@ -101,7 +184,7 @@ function PlaylistDetailPage() {
             {playlist.description}
           </p>
           <p className="mt-2 text-xs text-ld-text-muted">
-            {playlist.trackTitles.length} tracks
+            {tracks.length} tracks
           </p>
           <div className="mt-4">
             <ShareButton target={shareTarget} label="Share playlist" />
@@ -109,7 +192,16 @@ function PlaylistDetailPage() {
         </div>
       </div>
 
-      <TrackGrid tracks={tracks} loading={loading} />
+      {isMyPlaylist ? (
+        <SortablePlaylistTracks
+          tracks={tracks}
+          loading={loading}
+          canReorder={playlist.isOwner !== false}
+          onReorder={handleReorder}
+        />
+      ) : (
+        <TrackGrid tracks={tracks} loading={loading} />
+      )}
     </div>
   );
 }

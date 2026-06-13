@@ -1,39 +1,25 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { prisma } from "@/lib/db";
 import { buildShareMessage, getShareOrigin } from "@/lib/share";
-import { buildTrackSharePath } from "@/lib/share-slug";
-import { ShareLanding } from "./ShareLanding";
+import { buildTrackSharePath, findTrackByShareSlugs } from "@/lib/share-slug";
+import { ShareLanding } from "../t/[id]/ShareLanding";
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ artistSlug: string; songSlug: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
-  const origin = getShareOrigin();
-
-  const track = await prisma.track.findUnique({
-    where: { id },
-    include: { artist: { select: { id: true, name: true } } },
-  });
+  const { artistSlug, songSlug } = await params;
+  const track = await findTrackByShareSlugs(artistSlug, songSlug);
 
   if (!track) {
     return { title: "Track not found — LOWDIF" };
   }
 
+  const origin = getShareOrigin();
   const title = `${track.title} — ${track.artist.name}`;
-  const description = buildShareMessage(
-    {
-      type: "track",
-      track: {
-        ...track,
-        createdAt: track.createdAt.toISOString(),
-        artist: track.artist,
-      },
-    },
-    null
-  );
+  const description = buildShareMessage({ type: "track", track }, null);
   const cover = track.coverUrl?.startsWith("http")
     ? track.coverUrl
     : track.coverUrl
@@ -46,10 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title,
       description,
-      url: `${origin.replace(/\/$/, "")}${buildTrackSharePath({
-        title: track.title,
-        artist: track.artist,
-      })}`,
+      url: `${origin.replace(/\/$/, "")}${buildTrackSharePath(track)}`,
       siteName: "LOWDIF",
       type: "music.song",
       images: cover ? [{ url: cover, width: 512, height: 512, alt: track.title }] : undefined,
@@ -63,8 +46,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function TrackSharePage({ params }: PageProps) {
-  const { id } = await params;
+export default async function TrackShareSlugPage({ params }: PageProps) {
+  const { artistSlug, songSlug } = await params;
+  const track = await findTrackByShareSlugs(artistSlug, songSlug);
+
+  if (!track) notFound();
 
   return (
     <Suspense
@@ -74,7 +60,7 @@ export default async function TrackSharePage({ params }: PageProps) {
         </div>
       }
     >
-      <ShareLanding trackId={id} />
+      <ShareLanding trackId={track.id} />
     </Suspense>
   );
 }

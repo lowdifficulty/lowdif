@@ -1,31 +1,75 @@
 const FALLBACK: [string, string] = ["#ff006e", "#3a86ff"];
 
-function rgb(data: Uint8ClampedArray): string {
-  return `rgb(${data[0]}, ${data[1]}, ${data[2]})`;
+type Rgb = [number, number, number];
+
+function rgb([r, g, b]: Rgb): string {
+  return `rgb(${r}, ${g}, ${b})`;
 }
 
-/** Deterministic 0–1 values from a string seed (stable per track cover). */
-function seededRandom(seed: string): () => number {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = (h << 5) - h + seed.charCodeAt(i);
-    h |= 0;
+function luminance(r: number, g: number, b: number): number {
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+/** Prefer lighter pixels and those with more chroma (colorful vs gray/black). */
+function scoreColor(r: number, g: number, b: number): number {
+  const lum = luminance(r, g, b);
+  if (lum < 45) return 0;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const chroma = max - min;
+  const saturation = max === 0 ? 0 : chroma / max;
+
+  return lum * 0.55 + chroma * 1.1 + saturation * 80;
+}
+
+function colorDistance(a: Rgb, b: Rgb): number {
+  const [r1, g1, b1] = a;
+  const [r2, g2, b2] = b;
+  return Math.hypot(r1 - r2, g1 - g2, b1 - b2);
+}
+
+function pickVividPair(data: Uint8ClampedArray): [Rgb, Rgb] | null {
+  const candidates: { rgb: Rgb; score: number }[] = [];
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const score = scoreColor(r, g, b);
+    if (score > 0) candidates.push({ rgb: [r, g, b], score });
   }
-  return () => {
-    h = Math.imul(h ^ (h >>> 15), h | 1);
-    h ^= h + Math.imul(h ^ (h >>> 7), h | 61);
-    return ((h ^ (h >>> 14)) >>> 0) / 4294967296;
-  };
+
+  if (candidates.length === 0) return null;
+
+  candidates.sort((a, b) => b.score - a.score);
+  const best = candidates[0];
+  if (best.score < 35) return null;
+
+  const pool = candidates.slice(0, Math.max(8, Math.floor(candidates.length * 0.12)));
+  let second = pool.find(
+    (c) => c !== best && colorDistance(best.rgb, c.rgb) >= 55
+  );
+
+  if (!second) {
+    second = pool.reduce<(typeof candidates)[number] | null>((furthest, c) => {
+      if (c === best) return furthest;
+      if (!furthest) return c;
+      return colorDistance(best.rgb, c.rgb) > colorDistance(best.rgb, furthest.rgb)
+        ? c
+        : furthest;
+    }, null);
+  }
+
+  if (!second) second = candidates[Math.min(1, candidates.length - 1)];
+  return [best.rgb, second.rgb];
 }
 
 /**
  * Sample two colors from an album cover image for the pressure gradient.
  * Falls back to the default palette if the image cannot be read.
  */
-export function sampleCoverColors(
-  imageUrl: string,
-  seed = imageUrl
-): Promise<[string, string]> {
+export function sampleCoverColors(imageUrl: string): Promise<[string, string]> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -43,15 +87,9 @@ export function sampleCoverColors(
         }
 
         ctx.drawImage(img, 0, 0, size, size);
-        const rng = seededRandom(seed);
-        const x1 = Math.floor(rng() * size);
-        const y1 = Math.floor(rng() * size);
-        const x2 = Math.floor(rng() * size);
-        const y2 = Math.floor(rng() * size);
-
-        const c1 = ctx.getImageData(x1, y1, 1, 1).data;
-        const c2 = ctx.getImageData(x2, y2, 1, 1).data;
-        resolve([rgb(c1), rgb(c2)]);
+        const { data } = ctx.getImageData(0, 0, size, size);
+        const pair = pickVividPair(data);
+        resolve(pair ? [rgb(pair[0]), rgb(pair[1])] : FALLBACK);
       } catch {
         resolve(FALLBACK);
       }

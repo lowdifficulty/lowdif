@@ -15,6 +15,7 @@ import {
   marketingOrigin,
   normalizeHost,
 } from "@/lib/site-urls";
+import { isTrackSharePath } from "@/lib/share-slug";
 
 const PROTECTED_PREFIXES = ["/upload", "/account", "/stats"];
 
@@ -46,7 +47,7 @@ function routeByHost(request: NextRequest): NextResponse | null {
   }
 
   if (isMarketingHost(host)) {
-    if (isAppPath(pathname)) {
+    if (isAppPath(pathname) || isTrackSharePath(pathname)) {
       return redirectTo(appHref(pathname), request);
     }
     return null;

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -37,6 +37,7 @@ model User {
   referredById       String?
   referredBy           User?          @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
   referrals            User[]         @relation("UserReferrals")
+  playlists            Playlist[]
 }
 
 model Track {
@@ -53,6 +54,7 @@ model Track {
   listenEvents ListenEvent[]
   ownership    TrackOwnership[]
   shares       ShareEvent[]
+  playlistTracks PlaylistTrack[]
 
   @@index([title])
   @@index([genre])
@@ -113,4 +115,33 @@ model ShareEvent {
   @@index([playlistSlug])
   @@index([sharerId])
   @@index([createdAt])
+}
+
+model Playlist {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug        String
+  title       String
+  description String?
+  coverUrl    String?
+  tracks      PlaylistTrack[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+model PlaylistTrack {
+  id         String   @id @default(cuid())
+  playlistId String
+  trackId    String
+  position   Int
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, trackId])
+  @@unique([playlistId, position])
+  @@index([playlistId])
 }
