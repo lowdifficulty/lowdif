@@ -135,98 +135,239 @@ body.ld-auth {
   color: rgba(0, 0, 0, 0.45);
 }
 
-/* Join grant landing — Block One–inspired serif + clean sans */
+/* Join grant landing — join.blockonerecords.com (Unbounce desktop + mobile) */
+.ld-join-page {
+  --join-purple: #5c22ff;
+  --join-purple-hover: #4b1af2;
+  --join-purple-active: #4015e6;
+  --join-section-gap: 17px;
+  min-height: 760px;
+  background: #000000;
+  color: #ffffff;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.ld-join-inner {
+  width: 100%;
+  max-width: 495px;
+  padding: 76px 20px 80px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
 .ld-join-logo {
-  font-family: var(--font-join-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: clamp(2rem, 5vw, 3.25rem);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-family: var(--font-join-montserrat), Montserrat, "Helvetica Neue", Arial,
+    sans-serif;
+  display: flex;
+  align-items: flex-end;
+  min-height: 187px;
+  font-size: 72px;
+  font-weight: 600;
   line-height: 1;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  color: #ffffff;
+  margin: 0 0 var(--join-section-gap);
+}
+
+.ld-join-logo-mobile {
+  display: none;
+}
+
+.ld-join-headline-wrap {
+  margin: 0 0 var(--join-section-gap);
 }
 
 .ld-join-headline {
-  font-family: var(--font-join-display), "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(1.75rem, 3.8vw, 2.75rem);
-  font-weight: 400;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-family: var(--font-join-montserrat), Montserrat, "Helvetica Neue", Arial,
+    sans-serif;
+  font-size: 48px;
+  font-weight: 500;
+  line-height: 50px;
+  letter-spacing: -2px;
+  color: #ffffff;
+  margin: 0;
+}
+
+.ld-join-body-wrap {
+  margin: 0 0 var(--join-section-gap);
 }
 
 .ld-join-body {
-  font-family: var(--font-join-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: clamp(1rem, 2.2vw, 1.25rem);
-  font-weight: 400;
-  line-height: 1.65;
-  letter-spacing: 0.01em;
-}
-
-.ld-join-cta {
-  display: inline-block;
-  min-width: 11rem;
-  background: #ffffff;
-  color: #000000;
-  border: 2px solid #ffffff;
-  padding: 0.875rem 2.25rem;
-  font-family: var(--font-join-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 12px;
+  font-family: var(--font-join-montserrat), Montserrat, "Helvetica Neue", Arial,
+    sans-serif;
+  font-size: 16px;
   font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  transition: all 0.2s ease;
+  line-height: 26px;
+  color: #ffffff;
+  margin: 0;
+  white-space: nowrap;
 }
 
-.ld-join-cta:hover {
-  background: transparent;
-  color: #ffffff;
+.ld-join-form {
+  margin: 0;
 }
 
 .ld-join-form-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-@media (min-width: 480px) {
-  .ld-join-form-row {
-    flex-direction: row;
-    align-items: stretch;
-    gap: 0;
-  }
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0;
+  width: 495px;
+  max-width: 100%;
 }
 
 .ld-join-input {
-  width: 100%;
-  flex: 1;
-  background: transparent;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  padding: 0.875rem 1rem;
-  font-family: var(--font-join-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  width: 320px;
+  flex: 0 0 320px;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 0 15px;
+  font-family: var(--font-join-montserrat), Montserrat, "Helvetica Neue", Arial,
+    sans-serif;
   font-size: 15px;
+  line-height: 15px;
   font-weight: 400;
+  color: var(--join-purple);
+  background-color: #ffffff;
+  border: 1px solid var(--join-purple);
+  border-radius: 4px;
   outline: none;
-  transition: border-color 0.2s ease;
-}
-
-@media (min-width: 480px) {
-  .ld-join-input {
-    border-right: none;
-  }
 }
 
 .ld-join-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--join-purple);
+  opacity: 0.65;
 }
 
 .ld-join-input:focus {
-  border-color: #ffffff;
+  border-color: var(--join-purple);
+}
+
+.ld-join-cta {
+  flex: 0 0 175px;
+  width: 175px;
+  height: 47px;
+  margin-top: 1px;
+  padding: 0;
+  font-family: var(--font-join-montserrat), Montserrat, "Helvetica Neue", Arial,
+    sans-serif;
+  font-size: 14px;
+  line-height: 17px;
+  font-weight: 600;
+  text-align: center;
+  color: #ffffff;
+  background: var(--join-purple);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ld-join-cta:hover {
+  background: var(--join-purple-hover);
+}
+
+.ld-join-cta:active {
+  background: var(--join-purple-active);
 }
 
 .ld-join-error {
-  font-family: var(--font-join-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: 12px 0 0;
+  font-family: var(--font-join-montserrat), Montserrat, "Helvetica Neue", Arial,
+    sans-serif;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.4;
+  color: #ffffff;
+}
+
+/* Mobile — matches archive @media (max-width: 600px) */
+@media only screen and (max-width: 600px) {
+  .ld-join-page {
+    --join-mobile-content-width: 280px;
+    --join-mobile-content-inset: 20px;
+    min-height: 795px;
+    overflow-x: hidden;
+  }
+
+  .ld-join-inner {
+    max-width: 320px;
+    padding: 6px 0 80px;
+  }
+
+  .ld-join-logo {
+    min-height: 192px;
+    width: var(--join-mobile-content-width);
+    margin-left: var(--join-mobile-content-inset);
+    margin-bottom: 20px;
+    font-size: 66px;
+    font-weight: 600;
+    letter-spacing: 0;
+    align-items: flex-end;
+  }
+
+  .ld-join-logo-desktop {
+    display: none;
+  }
+
+  .ld-join-logo-mobile {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 100%;
+    line-height: 0.9;
+  }
+
+  .ld-join-logo-letter {
+    display: block;
+    line-height: 0.9;
+  }
+
+  .ld-join-headline-wrap {
+    padding-left: var(--join-mobile-content-inset);
+    margin-bottom: 10px;
+  }
+
+  .ld-join-headline {
+    transform: scale(0.9);
+    transform-origin: top left;
+    width: 317px;
+    max-width: 317px;
+    margin-bottom: -10px;
+  }
+
+  .ld-join-body-wrap {
+    padding-left: 23px;
+    margin-bottom: 15px;
+  }
+
+  .ld-join-body {
+    transform: scale(0.71);
+    transform-origin: top left;
+    margin-bottom: -15px;
+  }
+
+  .ld-join-form {
+    padding-left: var(--join-mobile-content-inset);
+  }
+
+  .ld-join-form-row {
+    flex-direction: column;
+    width: var(--join-mobile-content-width);
+  }
+
+  .ld-join-input {
+    width: var(--join-mobile-content-width);
+    flex: none;
+  }
+
+  .ld-join-cta {
+    width: var(--join-mobile-content-width);
+    flex: none;
+    margin-top: 19px;
+  }
 }
 
 .ld-join-cta-secondary {
@@ -773,6 +914,14 @@ body.ld-auth {
 }
 
 /* ── B&W matrix / GPU glitch sectors (partial, silent) ── */
+
+/* Join page — keep typography scale/position stable during glitch */
+html.glitch-takeover-active .ld-join-page h1,
+html.glitch-takeover-active .ld-join-page p,
+html.glitch-takeover-preview .ld-join-page h1,
+html.glitch-takeover-preview .ld-join-page p {
+  animation: none !important;
+}
 
 html.glitch-takeover-active body {
   animation: glitch-signal-jitter var(--glitch-total-ms, 2s) ease-out forwards;

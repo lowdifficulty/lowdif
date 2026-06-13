@@ -1,19 +1,13 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { marketingHref } from "@/lib/site-urls";
 
-const joinDisplay = Cormorant_Garamond({
+const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  variable: "--font-join-display",
-});
-
-const joinSans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-join-sans",
+  variable: "--font-join-montserrat",
 });
 
 export function JoinPage() {
@@ -34,28 +28,36 @@ export function JoinPage() {
   }
 
   return (
-    <section
-      className={`${joinDisplay.variable} ${joinSans.variable} ld-join-page flex min-h-screen flex-col items-center justify-center px-6 py-16 text-center`}
-    >
-      <div className="mx-auto w-full max-w-3xl">
-        <p className="ld-join-logo text-white">LOWDIF</p>
-
-        <h1 className="ld-join-headline mt-8 text-white">
-          Unleash your creative spirit.
-        </h1>
-
-        <p className="ld-join-body mx-auto mt-8 max-w-xl text-white/65">
-          Are you or a friend an up and coming artist?
-          <br className="hidden sm:inline" />
-          <span className="sm:ml-1">
-            Sign up for our $1,000 per month grant program!
+    <section className={`${montserrat.variable} ld-join-page`}>
+      <div className="ld-join-inner">
+        <p className="ld-join-logo" aria-label="LOWDIF">
+          <span className="ld-join-logo-desktop">LOWDIF</span>
+          <span className="ld-join-logo-mobile" aria-hidden="true">
+            {(["L", "O", "W", "D", "I", "F"] as const).map((letter, index) => (
+              <span key={index} className="ld-join-logo-letter">
+                {letter}
+              </span>
+            ))}
           </span>
         </p>
 
-        <form
-          onSubmit={handleSubmit}
-          className="ld-join-form mx-auto mt-12 max-w-md"
-        >
+        <div className="ld-join-headline-wrap">
+          <h1 className="ld-join-headline">
+            Unleash your
+            <br />
+            creative spirit.
+          </h1>
+        </div>
+
+        <div className="ld-join-body-wrap">
+          <p className="ld-join-body">
+            Are you or a friend an up and coming artist?
+            <br />
+            Sign up for our $1,000 per month grant program!
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="ld-join-form">
           <div className="ld-join-form-row">
             <input
               type="email"
@@ -67,16 +69,16 @@ export function JoinPage() {
                 setEmail(e.target.value);
                 if (error) setError("");
               }}
-              placeholder="Email address"
+              placeholder="Enter your email"
               className="ld-join-input"
               aria-label="Email address"
             />
-            <button type="submit" className="ld-join-cta shrink-0">
+            <button type="submit" className="ld-join-cta">
               Get Started
             </button>
           </div>
           {error && (
-            <p className="ld-join-error mt-3 text-left" role="alert">
+            <p className="ld-join-error" role="alert">
               {error}
             </p>
           )}
