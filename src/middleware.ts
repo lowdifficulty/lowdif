@@ -32,13 +32,6 @@ function routeByHost(request: NextRequest): NextResponse | null {
   const host = normalizeHost(request.headers.get("host") ?? "");
   const { pathname } = request.nextUrl;
 
-  if (host === `www.${marketingOrigin.host}`) {
-    return redirectTo(
-      new URL(`${pathname}${request.nextUrl.search}`, marketingOrigin).toString(),
-      request
-    );
-  }
-
   if (isAppHost(host)) {
     if (pathname === "/") {
       return redirectTo(appHref("/trending"), request);
