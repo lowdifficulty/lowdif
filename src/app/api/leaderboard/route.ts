@@ -6,7 +6,7 @@ import {
   DEMO_LISTENER_LEADERBOARD,
   mergeLeaderboardRows,
 } from "@/lib/demo-leaderboard";
-import { avatarForUser } from "@/lib/user-avatar";
+import { resolveUserAvatar } from "@/lib/user-avatar";
 
 export async function GET() {
   try {
@@ -14,6 +14,7 @@ export async function GET() {
       select: {
         id: true,
         name: true,
+        avatarUrl: true,
         miningRecords: { select: { tokens: true } },
         tracks: { select: { playCount: true, coverUrl: true } },
       },
@@ -31,7 +32,7 @@ export async function GET() {
       const row = {
         id: u.id,
         name: u.name,
-        avatarUrl: avatarForUser(u.name),
+        avatarUrl: resolveUserAvatar(u.name, u.avatarUrl),
         score,
       };
       const existing = listenerMap.get(key);
@@ -46,11 +47,10 @@ export async function GET() {
       .filter((u) => u.tracks.length > 0)
       .map((u) => {
         const plays = u.tracks.reduce((sum, t) => sum + t.playCount, 0);
-        const cover = u.tracks[0]?.coverUrl ?? null;
         return {
           id: u.id,
           name: u.name,
-          avatarUrl: avatarForUser(u.name, cover),
+          avatarUrl: resolveUserAvatar(u.name, u.avatarUrl),
           score: lowdifMintedFromPlays(plays),
         };
       })

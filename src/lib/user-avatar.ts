@@ -20,3 +20,13 @@ export function avatarForUser(
     "/covers/lunar-cache.jpg"
   );
 }
+
+/** Prefer uploaded profile photo; optional track cover only as last resort. */
+export function resolveUserAvatar(
+  name: string,
+  profileAvatar?: string | null,
+  trackCoverFallback?: string | null
+): string {
+  if (profileAvatar) return profileAvatar;
+  return avatarForUser(name, trackCoverFallback);
+}

@@ -48,7 +48,7 @@ export default function LeaderboardPage() {
           Leaderboard
         </h1>
         <p className="mt-2 text-ld-text-secondary">
-          Top miners by LOWDIF earned and top publishers by minted plays.
+          Top listeners by LOWDIF earned and top publishers by minted plays.
         </p>
       </div>
 
@@ -61,14 +61,16 @@ export default function LeaderboardPage() {
 
       <div className="grid gap-8 lg:grid-cols-2">
         <LeaderboardTable
-          title="Top miners"
+          title="Top listeners"
           entries={listeners}
           emptyMessage="No mining yet. Stream a track to climb the board."
+          linkMode="profile"
         />
         <LeaderboardTable
           title="Top publishers"
           entries={artists}
           emptyMessage="No uploads yet. Publish tracks to rank here."
+          linkMode="catalog"
         />
       </div>
     </div>

@@ -152,7 +152,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const playTrack = useCallback(
     (track: TrackWithArtist, queue?: TrackWithArtist[]) => {
-      if (queue?.length) queueRef.current = queue;
+      if (queue) queueRef.current = queue;
       const isReplay =
         currentTrackRef.current?.id === track.id &&
         (miningPhase === "minted" || miningPhase === "failed");

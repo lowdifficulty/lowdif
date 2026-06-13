@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { coverForTitle } from "@/lib/covers";
 import { lowdifMintedFromPlays } from "@/lib/display";
 import { readGiveShareToArtists } from "@/lib/profile-user";
+import { resolveUserAvatar } from "@/lib/user-avatar";
 
 export interface PublicProfileTrack {
   id: string;
@@ -18,7 +19,7 @@ export interface PublicUserProfile {
   id: string;
   name: string;
   bio: string | null;
-  avatarUrl: string | null;
+  avatarUrl: string;
   walletAddress: string | null;
   giveShareToArtists: boolean;
   memberSince: string;
@@ -88,7 +89,7 @@ export async function fetchPublicProfile(
     id: user.id,
     name: user.name,
     bio: user.bio,
-    avatarUrl: user.avatarUrl,
+    avatarUrl: resolveUserAvatar(user.name, user.avatarUrl),
     walletAddress: user.walletAddress,
     giveShareToArtists,
     memberSince: user.createdAt.toISOString(),

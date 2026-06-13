@@ -1,5 +1,5 @@
 import type { User } from "@prisma/client";
-import { avatarForUser } from "./user-avatar";
+import { resolveUserAvatar } from "./user-avatar";
 import type { SessionUser } from "./types";
 
 export function toSessionUser(
@@ -25,8 +25,10 @@ export function toSessionUser(
     walletAddress: user.walletAddress,
     bio: user.bio,
     giveShareToArtists: user.giveShareToArtists ?? false,
-    avatarUrl:
-      user.avatarUrl ??
-      avatarForUser(user.name, user.tracks?.[0]?.coverUrl),
+    avatarUrl: resolveUserAvatar(
+      user.name,
+      user.avatarUrl,
+      user.tracks?.[0]?.coverUrl
+    ),
   };
 }

@@ -6,6 +6,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.trim() ?? "";
   const genre = searchParams.get("genre")?.trim() ?? "";
+  const artistId = searchParams.get("artistId")?.trim() ?? "";
 
   const tracks = await prisma.track.findMany({
     where: {
@@ -19,13 +20,14 @@ export async function GET(request: Request) {
             }
           : {},
         genre ? { genre: { equals: genre } } : {},
+        artistId ? { artistId } : {},
       ],
     },
     include: {
       artist: { select: { id: true, name: true } },
     },
     orderBy: [{ playCount: "desc" }, { createdAt: "desc" }],
-    take: 50,
+    take: artistId ? 100 : 50,
   });
 
   return NextResponse.json({
