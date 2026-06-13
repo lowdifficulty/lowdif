@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { buildShareMessage, getShareOrigin } from "@/lib/share";
 import { buildTrackSharePath, findTrackByShareSlugs } from "@/lib/share-slug";
-import { ShareLanding } from "../t/[id]/ShareLanding";
+import { ShareLanding } from "../../t/[id]/ShareLanding";
 
 interface PageProps {
   params: Promise<{ artistSlug: string; songSlug: string }>;
