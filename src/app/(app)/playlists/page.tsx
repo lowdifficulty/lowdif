@@ -14,7 +14,7 @@ export default function PlaylistsPage() {
           Playlists
         </h1>
         <p className="mt-2 text-ld-text-secondary">
-          Eight sample playlists to mine LOWDIF across the catalog.
+          Trip hop picks from the catalog.
         </p>
       </div>
 

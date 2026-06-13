@@ -29,6 +29,7 @@ const covers = [
   { file: "zero-day-blues.svg", c1: "#60a5fa", c2: "#1e3a8a", accent: "#93c5fd" },
   { file: "phantom-arcade.svg", c1: "#c084fc", c2: "#6b21a8", accent: "#d8b4fe" },
   { file: "velvet-circuit.svg", c1: "#f43f5e", c2: "#4c0519", accent: "#fb7185" },
+  { file: "trip-hop.svg", c1: "#1c1917", c2: "#44403c", accent: "#a8a29e" },
 ];
 
 function coverSvg({ c1, c2, accent }) {
