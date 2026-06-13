@@ -52,13 +52,17 @@ function pickVividPair(data: Uint8ClampedArray): [Rgb, Rgb] | null {
   );
 
   if (!second) {
-    second = pool.reduce<(typeof candidates)[number] | null>((furthest, c) => {
-      if (c === best) return furthest;
-      if (!furthest) return c;
-      return colorDistance(best.rgb, c.rgb) > colorDistance(best.rgb, furthest.rgb)
-        ? c
-        : furthest;
-    }, null);
+    const furthest = pool.reduce<(typeof candidates)[number] | undefined>(
+      (acc, c) => {
+        if (c === best) return acc;
+        if (!acc) return c;
+        return colorDistance(best.rgb, c.rgb) > colorDistance(best.rgb, acc.rgb)
+          ? c
+          : acc;
+      },
+      undefined
+    );
+    if (furthest) second = furthest;
   }
 
   if (!second) second = candidates[Math.min(1, candidates.length - 1)];

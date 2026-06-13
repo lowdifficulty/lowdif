@@ -113,7 +113,6 @@ export function getShareCoverUrl(target: ShareTarget, origin = getAppOrigin()): 
 
 export function socialShareUrls(url: string, text: string) {
   const encodedUrl = encodeURIComponent(url);
-  const encodedText = encodeURIComponent(text);
   const combined = encodeURIComponent(`${text} ${url}`);
 
   return {
