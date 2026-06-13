@@ -89,6 +89,7 @@ export const AUTH_PATH_PREFIXES = ["/login", "/signup", "/artist/signup"] as con
 export function isMarketingPath(pathname: string): boolean {
   return (
     pathname === "/" ||
+    pathname === "/join" ||
     pathname === "/whitepaper" ||
     pathname.startsWith("/whitepaper/")
   );

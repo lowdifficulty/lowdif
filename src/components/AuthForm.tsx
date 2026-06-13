@@ -13,15 +13,17 @@ interface AuthFormProps {
   mode: "login" | "signup";
   variant?: "dark" | "light";
   redirectTo?: string;
+  defaultEmail?: string;
 }
 
 export function AuthForm({
   mode,
   variant = "dark",
   redirectTo = "/trending",
+  defaultEmail = "",
 }: AuthFormProps) {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");

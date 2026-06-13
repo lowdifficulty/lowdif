@@ -5,11 +5,15 @@ export type MarketingTheme = "dark" | "light";
 
 interface MarketingShellProps {
   theme?: MarketingTheme;
+  hideFooter?: boolean;
+  hideNav?: boolean;
   children: React.ReactNode;
 }
 
 export function MarketingShell({
   theme = "dark",
+  hideFooter = false,
+  hideNav = false,
   children,
 }: MarketingShellProps) {
   const isLight = theme === "light";
@@ -22,9 +26,9 @@ export function MarketingShell({
           : "min-h-screen bg-black text-white"
       }
     >
-      <MarketingNav theme={theme} />
+      {!hideNav && <MarketingNav theme={theme} />}
       <main>{children}</main>
-      <MarketingFooter theme={theme} />
+      {!hideFooter && <MarketingFooter theme={theme} />}
     </div>
   );
 }
