@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CONTRACT_ADDRESS } from "@/lib/marketing-content";
+import { appHref } from "@/lib/site-urls";
 import type { MarketingTheme } from "./MarketingShell";
 
 interface MarketingFooterProps {
@@ -65,7 +66,7 @@ export function MarketingFooter({ theme = "dark" }: MarketingFooterProps) {
             <Link href="/login" className="transition hover:opacity-100">
               Login
             </Link>
-            <Link href="/trending" className="transition hover:opacity-100">
+            <Link href={appHref("/trending")} className="transition hover:opacity-100">
               App
             </Link>
           </nav>

@@ -21,5 +21,9 @@ export function requireBlobInProduction(): void {
 }
 
 export function appBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  return (
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.NEXT_PUBLIC_MARKETING_URL ??
+    "http://localhost:3000"
+  );
 }

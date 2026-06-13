@@ -66,5 +66,6 @@ for (const target of targets) {
 }
 
 addEnv("NEXT_PUBLIC_APP_URL", "https://app.lowdif.com", "production");
+addEnv("NEXT_PUBLIC_MARKETING_URL", "https://lowdif.com", "production");
 
 console.log("Vercel environment variables configured.");

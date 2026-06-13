@@ -7,6 +7,7 @@ import {
   ROADMAP,
   TOKENOMICS_ROWS,
 } from "@/lib/marketing-content";
+import { appHref } from "@/lib/site-urls";
 import { FaqSection } from "./FaqSection";
 
 function SectionHeader({
@@ -117,7 +118,7 @@ export function LandingPage() {
           </div>
           <div className="mt-12">
             <Link
-              href="/trending"
+              href={appHref("/trending")}
               className="ld-btn-outline text-[10px]"
             >
               Start Listening

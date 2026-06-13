@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { getJwtSecret } from "./env";
 import { SESSION_COOKIE_NAME } from "./session";
+import { sessionCookieDomain } from "./site-urls";
 import type { SessionUser } from "./types";
 
 export async function hashPassword(password: string): Promise<string> {
@@ -39,16 +40,26 @@ export async function getSession(): Promise<SessionUser | null> {
 
 export async function setSessionCookie(token: string): Promise<void> {
   const cookieStore = await cookies();
+  const domain = sessionCookieDomain();
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
+    ...(domain ? { domain } : {}),
   });
 }
 
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
+  const domain = sessionCookieDomain();
+  cookieStore.set(SESSION_COOKIE_NAME, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+    ...(domain ? { domain } : {}),
+  });
 }

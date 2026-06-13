@@ -2,17 +2,78 @@ import { jwtVerify } from "jose";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
+import {
+  appHref,
+  appOrigin,
+  isAppHost,
+  isAppPath,
+  isAuthPath,
+  isMarketingHost,
+  isMarketingPath,
+  isSplitSite,
+  marketingHref,
+  marketingOrigin,
+  normalizeHost,
+} from "@/lib/site-urls";
 
 const PROTECTED_PREFIXES = ["/upload", "/account", "/stats"];
 
+function redirectTo(url: string, request: NextRequest): NextResponse {
+  const target = new URL(url);
+  if (request.nextUrl.search) {
+    target.search = request.nextUrl.search;
+  }
+  return NextResponse.redirect(target);
+}
+
+function routeByHost(request: NextRequest): NextResponse | null {
+  if (!isSplitSite() || !marketingOrigin || !appOrigin) return null;
+
+  const host = normalizeHost(request.headers.get("host") ?? "");
+  const { pathname } = request.nextUrl;
+
+  if (host === `www.${marketingOrigin.host}`) {
+    return redirectTo(
+      new URL(`${pathname}${request.nextUrl.search}`, marketingOrigin).toString(),
+      request
+    );
+  }
+
+  if (isAppHost(host)) {
+    if (pathname === "/") {
+      return redirectTo(appHref("/trending"), request);
+    }
+    if (isMarketingPath(pathname)) {
+      return redirectTo(marketingHref(pathname), request);
+    }
+    if (isAuthPath(pathname)) {
+      return redirectTo(marketingHref(pathname), request);
+    }
+    return null;
+  }
+
+  if (isMarketingHost(host)) {
+    if (isAppPath(pathname)) {
+      return redirectTo(appHref(pathname), request);
+    }
+    return null;
+  }
+
+  return null;
+}
+
 export async function middleware(request: NextRequest) {
+  const hostRoute = routeByHost(request);
+  if (hostRoute) return hostRoute;
+
   const { pathname } = request.nextUrl;
   if (!PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.next();
   }
 
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const loginUrl = new URL("/login", request.url);
+  const loginBase = isSplitSite() ? marketingHref("/login") : new URL("/login", request.url).toString();
+  const loginUrl = new URL(loginBase);
   loginUrl.searchParams.set("next", pathname);
 
   if (!token) {
@@ -33,5 +94,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/upload/:path*", "/account/:path*", "/stats/:path*"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|covers|uploads|ads).*)",
+  ],
 };

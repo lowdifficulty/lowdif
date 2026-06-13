@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MARKETING_NAV_LINKS } from "@/lib/marketing-content";
+import { appHref } from "@/lib/site-urls";
 import type { SessionUser } from "@/lib/types";
 import type { MarketingTheme } from "./MarketingShell";
 
@@ -78,7 +79,7 @@ export function MarketingNav({ theme = "dark" }: MarketingNavProps) {
             </Link>
           ))}
           {user ? (
-            <Link href="/trending" className={ctaClass}>
+            <Link href={appHref("/trending")} className={ctaClass}>
               Open App
             </Link>
           ) : (
@@ -125,7 +126,7 @@ export function MarketingNav({ theme = "dark" }: MarketingNavProps) {
               </Link>
             ))}
             {user ? (
-              <Link href="/trending" className={mobileActiveClass}>
+              <Link href={appHref("/trending")} className={mobileActiveClass}>
                 Open App
               </Link>
             ) : (

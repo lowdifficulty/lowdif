@@ -7,6 +7,7 @@ import {
   clearStoredReferral,
   getStoredReferral,
 } from "@/lib/share-referral";
+import { appHref, isSplitSite } from "@/lib/site-urls";
 
 interface AuthFormProps {
   mode: "login" | "signup";
@@ -62,6 +63,12 @@ export function AuthForm({
 
       if (mode === "signup") {
         clearStoredReferral();
+      }
+
+      const destination = appHref(redirectTo);
+      if (isSplitSite()) {
+        window.location.assign(destination);
+        return;
       }
 
       router.push(redirectTo);

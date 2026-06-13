@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { SessionUser } from "@/lib/types";
+import { marketingHref } from "@/lib/site-urls";
 
 interface NavProps {
   initialUser?: SessionUser | null;
@@ -52,7 +53,7 @@ export function Nav({ initialUser = null }: NavProps) {
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
-    window.location.href = "/";
+    window.location.href = marketingHref("/");
   }
 
   const linkClass = (href: string) =>
