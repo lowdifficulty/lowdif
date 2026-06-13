@@ -3,19 +3,30 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { upload } from "@vercel/blob/client";
 import { OwnershipSplitEditor } from "@/components/OwnershipSplitEditor";
 import { SquareImageCropper } from "@/components/SquareImageCropper";
 import type { OwnershipSplitInput } from "@/lib/ownership";
 import { loadSessionUser } from "@/lib/load-session-user";
 import type { SessionUser } from "@/lib/types";
+import {
+  AUDIO_FILE_ACCEPT,
+  AudioUploadError,
+  formatAudioDuration,
+  readAudioDurationSec,
+  validateAudioDurationSec,
+} from "@/lib/audio-upload";
 
 export default function UploadPage() {
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [title, setTitle] = useState("");
   const [genre, setGenre] = useState("Electronic");
-  const [durationSec, setDurationSec] = useState("");
   const [audio, setAudio] = useState<File | null>(null);
+  const [detectedDurationSec, setDetectedDurationSec] = useState<number | null>(
+    null
+  );
+  const [analyzingAudio, setAnalyzingAudio] = useState(false);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [croppedCover, setCroppedCover] = useState<Blob | null>(null);
   const [ownerWallet, setOwnerWallet] = useState("");
@@ -43,10 +54,34 @@ export default function UploadPage() {
       .finally(() => setLoading(false));
   }, [router]);
 
+  async function handleAudioSelected(file: File | null) {
+    setAudio(file);
+    setDetectedDurationSec(null);
+    setError("");
+
+    if (!file) return;
+
+    setAnalyzingAudio(true);
+    try {
+      const duration = await readAudioDurationSec(file);
+      validateAudioDurationSec(duration);
+      setDetectedDurationSec(Math.round(duration));
+    } catch (err) {
+      setAudio(null);
+      setError(
+        err instanceof AudioUploadError
+          ? err.message
+          : "Could not analyze this audio file."
+      );
+    } finally {
+      setAnalyzingAudio(false);
+    }
+  }
+
   async function handleUpload(e: FormEvent) {
     e.preventDefault();
-    if (!audio) {
-      setError("Please select an audio file.");
+    if (!audio || detectedDurationSec === null) {
+      setError("Please select a valid audio file (30s–7min).");
       return;
     }
     if (!ownerWallet.trim()) {
@@ -73,17 +108,37 @@ export default function UploadPage() {
     setError("");
     setMessage("");
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("genre", genre);
-    if (durationSec) formData.append("durationSec", durationSec);
-    formData.append("audio", audio);
-    if (croppedCover) {
-      formData.append("cover", croppedCover, "cover.jpg");
-    }
-    formData.append("ownershipSplits", JSON.stringify(ownershipSplits));
-
     try {
+      let audioUrl: string | null = null;
+
+      const useBlobClient =
+        typeof window !== "undefined" &&
+        !["localhost", "127.0.0.1"].includes(window.location.hostname);
+
+      if (useBlobClient) {
+        const blob = await upload(audio.name, audio, {
+          access: "public",
+          handleUploadUrl: "/api/tracks/audio-handler",
+        });
+        audioUrl = blob.url;
+      }
+
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("genre", genre);
+      formData.append("durationSec", String(detectedDurationSec));
+      if (audioUrl) {
+        formData.append("audioUrl", audioUrl);
+        formData.append("audioName", audio.name);
+        formData.append("audioType", audio.type || "application/octet-stream");
+      } else {
+        formData.append("audio", audio);
+      }
+      if (croppedCover) {
+        formData.append("cover", croppedCover, "cover.jpg");
+      }
+      formData.append("ownershipSplits", JSON.stringify(ownershipSplits));
+
       const res = await fetch("/api/tracks/upload", {
         method: "POST",
         body: formData,
@@ -95,14 +150,16 @@ export default function UploadPage() {
       }
       setMessage(`"${data.track.title}" uploaded successfully.`);
       setTitle("");
-      setDurationSec("");
       setAudio(null);
+      setDetectedDurationSec(null);
       setCoverFile(null);
       setCroppedCover(null);
       setCoOwners([]);
       if (data.user) setUser(data.user);
-    } catch {
-      setError("Network error during upload.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Network error during upload."
+      );
     } finally {
       setUploading(false);
     }
@@ -124,8 +181,8 @@ export default function UploadPage() {
           Upload track
         </h1>
         <p className="mt-2 text-ld-text-secondary">
-          Add audio, square cover art, and set ownership splits for automatic
-          LOWDIF distribution.
+          Add audio (30s–7min), square cover art, and set ownership splits for
+          automatic LOWDIF distribution.
         </p>
       </div>
 
@@ -141,26 +198,13 @@ export default function UploadPage() {
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="ld-label">Genre</label>
-              <input
-                value={genre}
-                onChange={(e) => setGenre(e.target.value)}
-                className="ld-input"
-              />
-            </div>
-            <div>
-              <label className="ld-label">Duration (seconds)</label>
-              <input
-                type="number"
-                min={1}
-                value={durationSec}
-                onChange={(e) => setDurationSec(e.target.value)}
-                placeholder="180"
-                className="ld-input"
-              />
-            </div>
+          <div>
+            <label className="ld-label">Genre</label>
+            <input
+              value={genre}
+              onChange={(e) => setGenre(e.target.value)}
+              className="ld-input"
+            />
           </div>
 
           <div>
@@ -168,10 +212,27 @@ export default function UploadPage() {
             <input
               required
               type="file"
-              accept="audio/*"
-              onChange={(e) => setAudio(e.target.files?.[0] ?? null)}
+              accept={AUDIO_FILE_ACCEPT}
+              onChange={(e) => void handleAudioSelected(e.target.files?.[0] ?? null)}
               className="w-full text-sm text-ld-text-secondary file:mr-4 file:border-2 file:border-white file:bg-white file:px-4 file:py-2 file:text-xs file:font-bold file:uppercase file:tracking-widest file:text-black"
             />
+            <p className="mt-2 text-xs text-ld-text-muted">
+              MP3, WAV, M4A, AAC, OGG, FLAC, WebM, AIFF, Opus — 30 seconds to 7
+              minutes.
+            </p>
+            {analyzingAudio && (
+              <p className="mt-2 text-xs text-ld-text-secondary">
+                Analyzing audio length…
+              </p>
+            )}
+            {detectedDurationSec !== null && !analyzingAudio && (
+              <p className="mt-2 text-xs text-ld-text">
+                Detected length:{" "}
+                <span className="font-mono">
+                  {formatAudioDuration(detectedDurationSec)}
+                </span>
+              </p>
+            )}
           </div>
         </div>
 
@@ -219,7 +280,7 @@ export default function UploadPage() {
 
         <button
           type="submit"
-          disabled={uploading}
+          disabled={uploading || analyzingAudio || detectedDurationSec === null}
           className="ld-btn-primary w-full text-center disabled:opacity-50"
         >
           {uploading ? "Uploading…" : "Upload track"}

@@ -8,7 +8,6 @@ import type { TrackWithArtist } from "@/lib/types";
 interface EditDraft {
   title: string;
   genre: string;
-  durationSec: string;
 }
 
 export function MyUploadsSection() {
@@ -48,7 +47,6 @@ export function MyUploadsSection() {
     setEditDraft({
       title: track.title,
       genre: track.genre,
-      durationSec: track.durationSec > 0 ? String(track.durationSec) : "",
     });
     setConfirmingDeleteId(null);
     setError(null);
@@ -73,9 +71,6 @@ export function MyUploadsSection() {
         body: JSON.stringify({
           title: editDraft.title,
           genre: editDraft.genre,
-          durationSec: editDraft.durationSec
-            ? Number(editDraft.durationSec)
-            : 0,
         }),
       });
       const data = await res.json();
@@ -176,32 +171,15 @@ export function MyUploadsSection() {
                             className="ld-input"
                           />
                         </div>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div>
-                            <label className="ld-label">Genre</label>
-                            <input
-                              value={editDraft.genre}
-                              onChange={(e) =>
-                                setEditDraft({ ...editDraft, genre: e.target.value })
-                              }
-                              className="ld-input"
-                            />
-                          </div>
-                          <div>
-                            <label className="ld-label">Duration (sec)</label>
-                            <input
-                              type="number"
-                              min={0}
-                              value={editDraft.durationSec}
-                              onChange={(e) =>
-                                setEditDraft({
-                                  ...editDraft,
-                                  durationSec: e.target.value,
-                                })
-                              }
-                              className="ld-input"
-                            />
-                          </div>
+                        <div>
+                          <label className="ld-label">Genre</label>
+                          <input
+                            value={editDraft.genre}
+                            onChange={(e) =>
+                              setEditDraft({ ...editDraft, genre: e.target.value })
+                            }
+                            className="ld-input"
+                          />
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <button

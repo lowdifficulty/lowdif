@@ -8,6 +8,13 @@ import {
 } from "@/lib/ownership";
 import { fetchProfileUser } from "@/lib/profile-user";
 import { insertTrackOwnership } from "@/lib/track-ownership-db";
+import { AudioUploadError } from "@/lib/audio-upload";
+import {
+  analyzeAudioFile,
+  analyzeAudioFromUrl,
+} from "@/lib/audio-upload-server";
+
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -19,12 +26,14 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const title = String(formData.get("title") ?? "").trim();
     const genre = String(formData.get("genre") ?? "Electronic").trim();
-    const durationSec = Number(formData.get("durationSec") ?? 0);
     const audioFile = formData.get("audio") as File | null;
+    const audioUrl = String(formData.get("audioUrl") ?? "").trim();
+    const audioName = String(formData.get("audioName") ?? "track.wav");
+    const audioType = String(formData.get("audioType") ?? "");
     const coverFile = formData.get("cover") as File | null;
     const splitsRaw = String(formData.get("ownershipSplits") ?? "[]");
 
-    if (!title || !audioFile) {
+    if (!title || (!audioFile?.size && !audioUrl)) {
       return NextResponse.json(
         { error: "Title and audio file are required." },
         { status: 400 }
@@ -46,7 +55,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: splitResult.error }, { status: 400 });
     }
 
-    const fileUrl = await uploadPublicFile(audioFile, "audio");
+    const audioMeta = { name: audioName, type: audioType };
+
+    let durationSec: number;
+    let fileUrl: string;
+
+    if (audioUrl) {
+      durationSec = await analyzeAudioFromUrl(audioUrl, audioMeta);
+      fileUrl = audioUrl;
+    } else if (audioFile) {
+      durationSec = await analyzeAudioFile(audioFile);
+      fileUrl = await uploadPublicFile(audioFile, "audio");
+    } else {
+      return NextResponse.json(
+        { error: "Audio file is required." },
+        { status: 400 }
+      );
+    }
 
     let coverUrl: string | null = null;
     if (coverFile && coverFile.size > 0) {
@@ -57,7 +82,7 @@ export async function POST(request: Request) {
       data: {
         title,
         genre,
-        durationSec: Number.isFinite(durationSec) ? durationSec : 0,
+        durationSec,
         fileUrl,
         coverUrl,
         artistId: session.id,
@@ -84,6 +109,9 @@ export async function POST(request: Request) {
       user: sessionUser ?? session,
     });
   } catch (err) {
+    if (err instanceof AudioUploadError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
     console.error("Track upload failed:", err);
     return NextResponse.json(
       { error: "Upload failed. Please try again." },
