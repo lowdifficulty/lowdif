@@ -2,9 +2,21 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { getJwtSecret } from "./env";
+import { fetchProfileUser } from "./profile-user";
 import { SESSION_COOKIE_NAME } from "./session";
 import { sessionCookieDomain } from "./site-urls";
 import type { SessionUser } from "./types";
+
+function sessionCookieOptions(maxAge: number, domain?: string) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge,
+    ...(domain ? { domain } : {}),
+  };
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
@@ -32,34 +44,49 @@ export async function getSession(): Promise<SessionUser | null> {
 
   try {
     const { payload } = await jwtVerify(token, getJwtSecret());
-    return (payload.user as SessionUser) ?? null;
+    const embedded = payload.user as SessionUser | undefined;
+    if (!embedded?.id) return null;
+
+    const fresh = await fetchProfileUser(embedded.id);
+    return fresh ?? embedded;
   } catch {
     return null;
   }
 }
 
-export async function setSessionCookie(token: string): Promise<void> {
+/** Drop a host-only session cookie (app subdomain stale sessions). */
+export async function clearHostOnlySessionCookie(): Promise<void> {
   const cookieStore = await cookies();
-  const domain = sessionCookieDomain();
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-    ...(domain ? { domain } : {}),
-  });
+  cookieStore.set(
+    SESSION_COOKIE_NAME,
+    "",
+    sessionCookieOptions(0)
+  );
 }
 
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
   const domain = sessionCookieDomain();
-  cookieStore.set(SESSION_COOKIE_NAME, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-    ...(domain ? { domain } : {}),
-  });
+
+  cookieStore.set(SESSION_COOKIE_NAME, "", sessionCookieOptions(0));
+
+  if (domain) {
+    cookieStore.set(
+      SESSION_COOKIE_NAME,
+      "",
+      sessionCookieOptions(0, domain)
+    );
+  }
+}
+
+export async function setSessionCookie(token: string): Promise<void> {
+  await clearSessionCookie();
+
+  const cookieStore = await cookies();
+  const domain = sessionCookieDomain();
+  cookieStore.set(
+    SESSION_COOKIE_NAME,
+    token,
+    sessionCookieOptions(60 * 60 * 24 * 7, domain)
+  );
 }

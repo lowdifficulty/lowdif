@@ -10,12 +10,10 @@ import { toSessionUser } from "@/lib/session-user";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, name, referredById } = body as {
-      email?: string;
-      password?: string;
-      name?: string;
-      referredById?: string;
-    };
+    const { referredById } = body as { referredById?: string };
+    const name = String(body.name ?? "").trim();
+    const email = String(body.email ?? "").trim().toLowerCase();
+    const password = String(body.password ?? "");
 
     if (!email || !password || !name) {
       return NextResponse.json(

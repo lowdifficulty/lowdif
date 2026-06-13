@@ -10,7 +10,8 @@ import { toSessionUser } from "@/lib/session-user";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const email = String(body.email ?? "").trim().toLowerCase();
+    const password = String(body.password ?? "");
 
     if (!email || !password) {
       return NextResponse.json(

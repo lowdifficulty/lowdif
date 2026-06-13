@@ -141,6 +141,7 @@ export default function UploadPage() {
 
       const res = await fetch("/api/tracks/upload", {
         method: "POST",
+        credentials: "include",
         body: formData,
       });
       const data = await res.json();

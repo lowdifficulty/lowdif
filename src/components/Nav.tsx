@@ -51,7 +51,7 @@ export function Nav({ initialUser = null }: NavProps) {
   }, [pathname, initialUser]);
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     setUser(null);
     window.location.href = marketingHref("/");
   }

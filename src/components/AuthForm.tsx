@@ -54,6 +54,7 @@ export function AuthForm({
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(body),
       });
 
@@ -67,7 +68,12 @@ export function AuthForm({
         clearStoredReferral();
       }
 
-      const destination = appHref(redirectTo);
+      const destination = isSplitSite()
+        ? appHref(
+            `/api/auth/sync-session?next=${encodeURIComponent(redirectTo)}`
+          )
+        : appHref(redirectTo);
+
       if (isSplitSite()) {
         window.location.assign(destination);
         return;

@@ -69,7 +69,7 @@ export function FullScreenPlayer() {
   const barProgress = useSmoothProgress(progress, isPlaying && miningPhase === "active");
 
   useEffect(() => {
-    fetch("/api/auth/me")
+    fetch("/api/auth/me", { credentials: "include" })
       .then((r) => r.json())
       .then((data) => setUserName(data.user?.name ?? null))
       .catch(() => setUserName(null));

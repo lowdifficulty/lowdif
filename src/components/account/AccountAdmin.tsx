@@ -70,6 +70,7 @@ export function AccountAdmin({ onUserLoaded }: AccountAdminProps) {
     try {
       const res = await fetch("/api/profile", {
         method: "PATCH",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
